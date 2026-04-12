@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TripDayType {
+  travel
+  basecamp
+}
+
+enum DayStopKind {
+  dinner
+  activity
+}
+
+model Trip {
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  title            String
+  summary          String    @db.Text
+  startingLocation String
+  endingLocation   String
+  startDate        DateTime? @db.Date
+  endDate          DateTime? @db.Date
+  routeOverview    String    @db.Text
+  notes            String    @db.Text
+  bookingPhone     String?
+  totalMiles       Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  days             TripDay[]
+  hotDogPlaces     HotDogPlace[]
+}
+
+model Place {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  regionLabel String?
+  googlePlaceId String? @unique
+  latitude    Float
+  longitude   Float
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  startDays   TripDay[] @relation("TripDayStartPlace")
+  endDays     TripDay[] @relation("TripDayEndPlace")
+  dayLocations DayLocation[]
+  stops       DayStop[]
+}
+
+model TripDay {
+  id                       String      @id @default(cuid())
+  tripId                   String
+  dayNumber                Int
+  date                     DateTime?   @db.Date
+  title                    String
+  type                     TripDayType
+  miles                    Int
+  distanceMeters           Int?
+  durationSeconds          Int?
+  routePolyline            String?     @db.Text
+  routeComputedAt          DateTime?
+  summary                  String      @db.Text
+  callout                  String      @db.Text
+  accommodationName        String?
+  accommodationDescription String?     @db.Text
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+  trip                     Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  startPlaceId             String
+  endPlaceId               String
+  startPlace               Place       @relation("TripDayStartPlace", fields: [startPlaceId], references: [id])
+  endPlace                 Place       @relation("TripDayEndPlace", fields: [endPlaceId], references: [id])
+  locations                DayLocation[]
+  photos                   TripPhoto[]
+  stops                    DayStop[]
+  hotDogPlaces             HotDogPlace[]
+
+  @@unique([tripId, dayNumber])
+  @@index([tripId, dayNumber])
+}
+
+model HotDogPlace {
+  id               String   @id @default(cuid())
+  tripId           String
+  tripDayId        String
+  googlePlaceId    String
+  name             String
+  address          String?
+  latitude         Float
+  longitude        Float
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  trip             Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripDay          TripDay  @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, googlePlaceId])
+  @@index([tripId, tripDayId])
+}
+
+model TripPhoto {
+  id                String    @id @default(cuid())
+  tripDayId         String
+  filePath          String
+  originalFilename  String
+  mimeType          String?
+  capturedAt        DateTime?
+  latitude          Float?
+  longitude         Float?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  tripDay           TripDay   @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
+
+  @@index([tripDayId, createdAt])
+}
+
+model DayLocation {
+  id        String   @id @default(cuid())
+  tripDayId String
+  placeId   String
+  sortOrder Int
+  note      String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tripDay   TripDay  @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@index([tripDayId, sortOrder])
+}
+
+model DayStop {
+  id         String      @id @default(cuid())
+  tripDayId  String
+  kind       DayStopKind
+  sortOrder  Int
+  name       String
+  note       String      @db.Text
+  sourceUrl  String?
+  latitude   Float?
+  longitude  Float?
+  detourDistanceMeters      Int?
+  detourMiles               Int?
+  distanceComputedAt        DateTime?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  placeId    String?
+  tripDay    TripDay     @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
+  place      Place?      @relation(fields: [placeId], references: [id], onDelete: SetNull)
+
+  @@index([tripDayId, kind, sortOrder])
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

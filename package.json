@@ -1,0 +1,36 @@
+{
+  "name": "rv-trip",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "node .next/standalone/server.js",
+    "lint": "next lint",
+    "seed": "tsx prisma/seed.ts",
+    "prefetch:hotdogs": "tsx scripts/prefetch-hotdogs.ts",
+    "recompute:activity-distances": "tsx scripts/recompute-activity-distances.ts",
+    "prisma:generate": "prisma generate"
+  },
+  "dependencies": {
+    "@chakra-ui/react": "^3.34.0",
+    "@emotion/react": "^11.14.0",
+    "@fortawesome/fontawesome-svg-core": "^7.2.0",
+    "@fortawesome/free-solid-svg-icons": "^7.2.0",
+    "@fortawesome/react-fontawesome": "^3.3.0",
+    "@prisma/client": "^6.19.3",
+    "exifr": "^7.1.3",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/google.maps": "^3.58.1",
+    "@types/node": "^22.13.14",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "prisma": "^6.19.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
