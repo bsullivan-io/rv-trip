@@ -11,7 +11,6 @@ import {
   updateTripPhotoAction,
   uploadTripPostMediaAction
 } from "@/app/trips/[slug]/actions";
-import { TripStageTabs } from "@/components/public/trip-stage-tabs";
 import { TrackerMap } from "@/components/public/tracker-map";
 import { EditModeGate } from "@/components/ui/edit-mode";
 import { getAdminSession } from "@/lib/auth";
@@ -146,8 +145,6 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
           </p>
           <p className="eyebrow tracker-page-subheading">Trip Tracker</p>
         </header>
-
-        <TripStageTabs slug={trip.slug} value="tracker" className="tracker-stage-tabs" />
 
         <section className="section-card tracker-map-card">
           <TrackerMap points={points} />
