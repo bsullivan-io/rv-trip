@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faShareNodes, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { formatShortDate } from "@/lib/dates";
@@ -17,9 +17,11 @@ export type OverviewMediaItem = {
 
 export function OverviewMediaLightbox({ allMedia }: { allMedia: OverviewMediaItem[] }) {
   const [selectedMedia, setSelectedMedia] = useState<OverviewMediaItem | null>(null);
+  const urlSyncReady = useRef(false);
 
-  // Sync ?media= param with open/closed state
+  // Sync ?media= param with open/closed state (skip on initial render)
   useEffect(() => {
+    if (!urlSyncReady.current) return;
     const params = new URLSearchParams(window.location.search);
     if (selectedMedia) {
       params.set("media", selectedMedia.id);
@@ -33,6 +35,7 @@ export function OverviewMediaLightbox({ allMedia }: { allMedia: OverviewMediaIte
 
   // Auto-open from ?media= on mount
   useEffect(() => {
+    urlSyncReady.current = true;
     const mediaId = new URLSearchParams(window.location.search).get("media");
     if (mediaId) {
       const found = allMedia.find((m) => m.id === mediaId);
@@ -101,9 +104,6 @@ export function OverviewMediaLightbox({ allMedia }: { allMedia: OverviewMediaIte
             <button className="button-secondary icon-button" type="button" onClick={handleShare} aria-label="Share" title="Share">
               <FontAwesomeIcon icon={faShareNodes} />
             </button>
-            <a className="button-secondary" href={selectedMedia.filePath} download={selectedMedia.originalFilename}>
-              Download
-            </a>
             <button className="button-secondary icon-button" type="button" onClick={() => setSelectedMedia(null)} aria-label="Close photo viewer" title="Close photo viewer">
               <FontAwesomeIcon icon={faXmark} />
             </button>

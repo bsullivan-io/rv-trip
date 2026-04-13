@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -648,6 +648,7 @@ export function TripViewer({
   const [trackerCenter, setTrackerCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [mapExpanded, setMapExpanded] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<TripMedia | null>(null);
+  const mediaUrlSyncReady = useRef(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [phoneSidebarOpen, setPhoneSidebarOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<"days" | "calendar">("days");
@@ -697,8 +698,9 @@ export function TripViewer({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [selectedMedia]);
 
-  // Sync ?media= param with open/closed state
+  // Sync ?media= param with open/closed state (skip on initial render)
   useEffect(() => {
+    if (!mediaUrlSyncReady.current) return;
     const params = new URLSearchParams(window.location.search);
     if (selectedMedia) {
       params.set("media", selectedMedia.id);
@@ -712,6 +714,7 @@ export function TripViewer({
 
   // Auto-open modal from ?media= on mount
   useEffect(() => {
+    mediaUrlSyncReady.current = true;
     const mediaId = new URLSearchParams(window.location.search).get("media");
     if (!mediaId) return;
     const allMedia = trip.days.flatMap((d) => [...d.photos, ...d.posts.flatMap((p) => p.media)]);
@@ -1734,9 +1737,6 @@ export function TripViewer({
                 <button className="button-secondary icon-button" type="button" onClick={() => handleSharePhoto(selectedMedia)} aria-label="Share photo" title="Share photo">
                   <FontAwesomeIcon icon={faShareNodes} />
                 </button>
-                <a className="button-secondary" href={selectedMedia.filePath} download={selectedMedia.originalFilename}>
-                  Download
-                </a>
                 <button className="button-secondary icon-button" type="button" onClick={() => setSelectedMedia(null)} aria-label="Close photo viewer" title="Close photo viewer">
                   <FontAwesomeIcon icon={faXmark} />
                 </button>
