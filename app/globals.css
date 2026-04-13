@@ -137,6 +137,7 @@ textarea {
   font-size: 0.75rem;
   color: var(--muted);
   margin-bottom: 8px;
+  padding: 0 16px;
 }
 
 .tracker-checkin-rv-icon {

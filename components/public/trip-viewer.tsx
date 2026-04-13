@@ -602,7 +602,6 @@ function LocationList({
               field="note"
               multiline
               className="muted"
-              placeholder="No day-specific note."
             />
           </div>
         </li>
@@ -1204,20 +1203,6 @@ export function TripViewer({
                   onSelectDay={selectDay}
                   canEdit={canEdit}
                 />
-                <div className="trip-legend">
-                  <span>
-                    <i className="line" /> selected route
-                  </span>
-                  <span>
-                    <i className="dot current" /> current day
-                  </span>
-                  <span>
-                    <i className="dot activity" /> activity
-                  </span>
-                  <span>
-                    <i className="dot live" /> your location
-                  </span>
-                </div>
                 {mapExpanded ? (
                   <div className="map-expanded-nav">
                     <div className="day-stepper">
@@ -1329,7 +1314,7 @@ export function TripViewer({
             <p className="eyebrow">Day {selectedDay.dayNumber} · {formatDateLabel(selectedDay.date)}</p>
             <InlineEditableText canEdit={editable} label="day title" value={selectedDay.title} action={updateDayAction} hiddenFields={dayHidden} field="title" className="trip-heading-edit" />
             <div className="chip-row">
-<span className="chip">{selectedDay.miles ? `${selectedDay.miles} miles` : "No long-haul mileage"}</span>
+{selectedDay.miles ? <span className="chip">{selectedDay.miles} miles</span> : null}
               {selectedDay.durationSeconds ? <span className="chip">{formatDriveTime(selectedDay.durationSeconds)}</span> : null}
               <span className="chip">{selectedDay.locations.length} location{selectedDay.locations.length === 1 ? "" : "s"}</span>
             </div>

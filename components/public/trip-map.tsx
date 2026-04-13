@@ -361,7 +361,7 @@ export function TripMap({ days, hotDogPlaces, trackPoints, centerOn, selectedDay
           map,
           position: { lat: p.latitude, lng: p.longitude },
           title: [p.cityName, p.stateCode].filter(Boolean).join(", ") || "Check-in",
-          icon: { url: "/rv.png", scaledSize: new google.maps.Size(44, 24), anchor: new google.maps.Point(22, 24) }
+          icon: { url: "/rv.png", scaledSize: new google.maps.Size(36, 20), anchor: new google.maps.Point(18, 20) }
         });
         marker.addListener("click", () => {
           infoWindow.setContent(
