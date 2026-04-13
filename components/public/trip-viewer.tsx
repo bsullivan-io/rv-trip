@@ -984,9 +984,7 @@ export function TripViewer({
             ) : (
               <>
                 <strong>{progress.label}</strong>
-                {progress.state === "active" && selectedDay.dayNumber !== progress.currentDayNumber ? (
-                  <span>Today is Day {progress.currentDayNumber}.</span>
-                ) : progress.state === "upcoming" && trip.startDate ? (
+                {progress.state === "upcoming" && trip.startDate ? (
                   <span>Starts {formatShortDate(trip.startDate)}.</span>
                 ) : null}
               </>
