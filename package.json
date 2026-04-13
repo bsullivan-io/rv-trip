@@ -26,6 +26,9 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "@types/google.maps": "^3.58.1",
     "@types/node": "^22.13.14",
