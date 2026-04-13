@@ -1039,6 +1039,7 @@ textarea {
   line-height: 1.02;
   font-size: clamp(1.45rem, 2vw, 2rem);
   color: var(--ink);
+  flex: 0 0 100%;
 }
 
 .day-post-primary-title .inline-edit-content,
@@ -1127,6 +1128,7 @@ textarea {
   display: flex;
   align-items: flex-start;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .inline-item-header > :first-child {
