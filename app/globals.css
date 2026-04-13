@@ -1136,6 +1136,10 @@ textarea {
   min-width: 0;
 }
 
+.inline-item-header > .day-post-primary-title {
+  flex: 0 0 100%;
+}
+
 .inline-delete-form {
   flex: 0 0 auto;
 }
@@ -1542,6 +1546,14 @@ textarea {
 
 .tracker-post-item {
   border-left-color: #c62839;
+}
+
+li.tracker-post-item.day-stop-card {
+  background: none;
+  border-left: none;
+  border-radius: 0;
+  padding: 20px 0 0;
+  border-top: 1px solid var(--line);
 }
 
 .tracker-point-header {
