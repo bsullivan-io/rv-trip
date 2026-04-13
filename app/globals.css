@@ -786,6 +786,16 @@ textarea {
   margin: 0 0 10px;
 }
 
+.toolbar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
 .toolbar-inline-error {
   grid-column: 1 / -1;
   margin-top: -2px;
@@ -1446,7 +1456,7 @@ textarea {
 .tracker-page-header h1 {
   margin: 0;
   font-family: Georgia, "Iowan Old Style", serif;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-size: clamp(1.8rem, 4vw, 3rem);
   line-height: 0.98;
   letter-spacing: -0.03em;
 }

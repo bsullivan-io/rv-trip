@@ -12,18 +12,20 @@ type TripStageTabsProps = {
   slug: string;
   value: TripStageTabValue;
   onSelectLocal?: (value: TripStageTabValue) => void;
+  showHotDogs?: boolean;
   className?: string;
 };
 
-const tabs: Array<{ value: TripStageTabValue; label: string; imageIcon?: string; fontIcon?: IconDefinition }> = [
+const allTabs: Array<{ value: TripStageTabValue; label: string; imageIcon?: string; fontIcon?: IconDefinition; adminOnly?: boolean }> = [
   { value: "map", label: "Map", fontIcon: faMap },
   { value: "calendar", label: "Calendar", fontIcon: faCalendarDays },
   { value: "locations", label: "Locations", fontIcon: faLocationDot },
-  { value: "hotdogs", label: "Hot Dogs", imageIcon: "/hot_dog.png" },
+  { value: "hotdogs", label: "Hot Dogs", imageIcon: "/hot_dog.png", adminOnly: true },
   { value: "tracker", label: "Tracker", fontIcon: faRoute }
 ];
 
-export function TripStageTabs({ slug, value, onSelectLocal, className }: TripStageTabsProps) {
+export function TripStageTabs({ slug, value, onSelectLocal, showHotDogs, className }: TripStageTabsProps) {
+  const tabs = allTabs.filter((tab) => !tab.adminOnly || showHotDogs);
   const router = useRouter();
 
   return (

@@ -18,6 +18,19 @@ type TrackerMapProps = {
   points: TrackerPoint[];
 };
 
+function isHotDogCheckIn(note: string | null) {
+  if (!note) return false;
+  const lower = note.toLowerCase();
+  return lower.includes("hot dog") || lower.includes("hotdog");
+}
+
+function checkinIcon(note: string | null) {
+  if (isHotDogCheckIn(note)) {
+    return { url: "/hot_dog.png", scaledSize: new google.maps.Size(28, 28), anchor: new google.maps.Point(14, 14) };
+  }
+  return { url: "/rv.png", scaledSize: new google.maps.Size(34, 18), anchor: new google.maps.Point(17, 18) };
+}
+
 let googleMapsPromise: Promise<void> | null = null;
 
 function loadGoogleMaps(): Promise<void> {
@@ -104,7 +117,7 @@ export function TrackerMap({ points }: TrackerMapProps) {
           position: { lat: point.latitude, lng: point.longitude },
           title: point.label,
           icon: point.source === "checkin"
-            ? { url: "/rv.png", scaledSize: new google.maps.Size(40, 22), anchor: new google.maps.Point(20, 22) }
+            ? checkinIcon(point.note)
             : { path: google.maps.SymbolPath.CIRCLE, scale: 4, fillColor: "#3d679e", fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 }
         });
 

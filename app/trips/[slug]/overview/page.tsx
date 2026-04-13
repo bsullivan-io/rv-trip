@@ -304,7 +304,12 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                       <div className="tracker-point-header">
                         <div className="tracker-point-header-main">
                           {point.source === "checkin" && (
-                            <img src="/rv.png" alt="" aria-hidden className="tracker-checkin-rv-icon" />
+                            <img
+                              src={point.note && (point.note.toLowerCase().includes("hot dog") || point.note.toLowerCase().includes("hotdog")) ? "/hot_dog.png" : "/rv.png"}
+                              alt=""
+                              aria-hidden
+                              className="tracker-checkin-rv-icon"
+                            />
                           )}
                           <strong>{resolveTrackerPointLabel(point, trackerCandidates)}</strong>
                           <span>{formatPointTimestamp(point.recordedAt, entry.timezone)}</span>

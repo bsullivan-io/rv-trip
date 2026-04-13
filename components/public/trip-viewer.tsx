@@ -640,7 +640,7 @@ export function TripViewer({
     locations: day.locations.length ? day.locations : [{ id: `${day.id}-fallback-location`, sortOrder: 1, note: null, place: day.endPlace }]
   }));
   const progress = deriveTripProgress(normalizedDays, initialSelectedDayNumber || null);
-  const { isUnlocked } = useEditMode();
+  const { isUnlocked, showHotDogs, setShowHotDogs } = useEditMode();
   const [selectedDayNumber, setSelectedDayNumber] = useState(progress.selectedDayNumber);
   const [viewMode, setViewMode] = useState<"map" | "calendar" | "locations" | "hotdogs" | "tracker">(initialViewMode);
   const [trackerCenter, setTrackerCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -1088,6 +1088,7 @@ export function TripViewer({
               }
               setViewMode(next);
             }}
+            showHotDogs={showHotDogs}
             className="desktop-only trip-stage-tabs-wrap"
           />
             <div className="phone-stage-selector mobile-only">
@@ -1175,6 +1176,10 @@ export function TripViewer({
                 </button>
               </div>
             ) : null}
+            <label className="toolbar-toggle">
+              <input type="checkbox" checked={showHotDogs} onChange={(e) => setShowHotDogs(e.target.checked)} />
+              Show Hot Dogs
+            </label>
           </div> : null}
           {flash ? <p className={flash.type === "error" ? "form-error toolbar-flash" : "form-success toolbar-flash"}>{flash.message}</p> : null}
           {trackerFlash ? <p className={trackerFlash.type === "error" ? "form-error toolbar-flash" : "form-success toolbar-flash"}>{trackerFlash.message}</p> : null}
@@ -1195,7 +1200,7 @@ export function TripViewer({
                 <TripMap
                   key={mapExpanded ? "expanded" : "inline"}
                   days={normalizedDays}
-                  hotDogPlaces={trip.hotDogPlaces}
+                  hotDogPlaces={showHotDogs ? trip.hotDogPlaces : []}
                   trackPoints={trackerPoints}
                   centerOn={trackerCenter}
                   selectedDayNumber={selectedDay.dayNumber}

@@ -357,11 +357,14 @@ export function TripMap({ days, hotDogPlaces, trackPoints, centerOn, selectedDay
 
       const trackerMarkers: google.maps.Marker[] = [];
       (trackPoints ?? []).filter((p) => p.source === "checkin").forEach((p) => {
+        const isHotDog = p.note ? p.note.toLowerCase().includes("hot dog") || p.note.toLowerCase().includes("hotdog") : false;
         const marker = new google.maps.Marker({
           map,
           position: { lat: p.latitude, lng: p.longitude },
           title: [p.cityName, p.stateCode].filter(Boolean).join(", ") || "Check-in",
-          icon: { url: "/rv.png", scaledSize: new google.maps.Size(36, 20), anchor: new google.maps.Point(18, 20) }
+          icon: isHotDog
+            ? { url: "/hot_dog.png", scaledSize: new google.maps.Size(28, 28), anchor: new google.maps.Point(14, 14) }
+            : { url: "/rv.png", scaledSize: new google.maps.Size(30, 16), anchor: new google.maps.Point(15, 16) }
         });
         marker.addListener("click", () => {
           infoWindow.setContent(
