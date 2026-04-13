@@ -33,7 +33,7 @@ export function TripStageTabs({ slug, value, onSelectLocal, className }: TripSta
         const next = details.value as TripStageTabValue;
 
         if (next === "tracker") {
-          router.push(`/trips/${slug}/tracker`);
+          router.push(`/trips/${slug}/overview`);
           return;
         }
 

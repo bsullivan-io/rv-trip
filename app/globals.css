@@ -77,21 +77,62 @@ textarea {
   height: 52px;
 }
 
-.top-nav {
+.top-nav-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
+  align-items: stretch;
+  gap: 0;
+}
+
+.top-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-decoration: none;
+  background: none;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.top-nav-tab:hover,
+.top-nav-tab.active {
+  color: var(--accent-2);
+  border-bottom-color: var(--accent-2);
+}
+
+.top-nav-tab-rv {
+  height: 18px;
+  width: auto;
+  image-rendering: pixelated;
+}
+
+.site-footer {
+  text-align: center;
+  padding: 24px 16px;
+  font-size: 0.75rem;
   color: var(--muted);
 }
 
-.top-nav a:hover {
-  color: var(--accent);
+.site-footer a {
+  color: var(--muted);
+  text-decoration: underline;
 }
 
-.header-lock-button {
-  min-width: 40px;
-  min-height: 40px;
-  padding: 0 12px;
+.tracker-checkin-rv-icon {
+  height: 20px;
+  width: auto;
+  image-rendering: pixelated;
+  display: block;
+  margin-bottom: 4px;
 }
 
 .panel {

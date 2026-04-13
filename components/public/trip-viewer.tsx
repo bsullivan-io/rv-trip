@@ -327,7 +327,7 @@ function CalendarView({
   variant: "compact" | "full";
 }) {
   const allWeeks = buildCalendarWeeks(monthIso, days, events);
-  const weeks = variant === "full" ? allWeeks.filter((week) => week.cells.some((cell) => cell.tripDay)) : allWeeks;
+  const weeks = allWeeks;
 
   return (
     <section className={variant === "full" ? "trip-calendar trip-calendar-full" : "trip-calendar"}>
@@ -1089,7 +1089,7 @@ export function TripViewer({
                 <option value="locations">Locations</option>
                 <option value="hotdogs">Hot Dogs</option>
               </select>
-              <Link className="button-secondary phone-tracker-link" href={`/trips/${trip.slug}/tracker`}>
+              <Link className="button-secondary phone-tracker-link" href={`/trips/${trip.slug}/overview`}>
                 Tracker
               </Link>
             </div>

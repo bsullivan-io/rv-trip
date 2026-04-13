@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     if (result.stored) {
       revalidatePath(`/trips/${body.tripSlug}`);
-      revalidatePath(`/trips/${body.tripSlug}/tracker`);
+      revalidatePath(`/trips/${body.tripSlug}/overview`);
     }
 
     return NextResponse.json(result);

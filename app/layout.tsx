@@ -2,11 +2,12 @@ import "./globals.css";
 import type { Metadata } from "next";
 import NextLink from "next/link";
 import Image from "next/image";
-import { Box, Flex, HStack, Link, Text } from "@chakra-ui/react";
+import { Box, Flex, Link } from "@chakra-ui/react";
 import { Provider } from "@/components/ui/provider";
 import { getAdminSession } from "@/lib/auth";
 import { AdminTrackerClient } from "@/components/public/admin-tracker-client";
-import { HeaderEditModeControl } from "@/components/ui/header-edit-mode-control";
+import { TopNav } from "@/components/public/top-nav";
+import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: "Make a Mile",
@@ -18,7 +19,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const adminSession = await getAdminSession();
+  const [adminSession, trip] = await Promise.all([
+    getAdminSession(),
+    prisma.trip.findFirst({ select: { slug: true } })
+  ]);
 
   return (
     <html lang="en">
@@ -44,20 +48,15 @@ export default async function RootLayout({
               <Link className="brand" as={NextLink} href="/" _hover={{ textDecoration: "none", color: "brand.600" }}>
                 <Image className="brand-logo" src="/logo.png" alt="Make a Mile" width={220} height={52} priority />
               </Link>
-              <HStack className="top-nav" as="nav" gap={5} color="muted" fontSize="sm" textTransform="uppercase" letterSpacing="0.08em">
-                <Link as={NextLink} href="/" _hover={{ color: "accentStrong" }}>
-                  Trips
-                </Link>
-                <Link as={NextLink} href="/admin" _hover={{ color: "accentStrong" }}>
-                  Admin
-                </Link>
-                {adminSession ? <HeaderEditModeControl /> : null}
-              </HStack>
+              <TopNav tripSlug={trip?.slug ?? ""} isAdmin={Boolean(adminSession)} />
             </Box>
           </Flex>
           <Box className="site-shell" maxW="92rem" mx="auto" px={{ base: 3, md: 5 }} py={{ base: 3, md: 4 }}>
             {children}
           </Box>
+          <footer className="site-footer">
+            <Link as={NextLink} href="/admin">Admin</Link>
+          </footer>
         </Provider>
       </body>
     </html>

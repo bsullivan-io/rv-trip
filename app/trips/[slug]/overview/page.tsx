@@ -169,7 +169,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
           <p className="trip-summary-range tracker-page-range">
             {trip.startDate ? formatShortDate(trip.startDate) : "Date not set"} to {trip.endDate ? formatShortDate(trip.endDate) : "Date not set"}
           </p>
-          <p className="eyebrow tracker-page-subheading">Trip Tracker</p>
+          <p className="eyebrow tracker-page-subheading">Trip Overview</p>
         </header>
 
         <section className="section-card tracker-map-card">
@@ -234,7 +234,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                         <form action={updateTripPhotoAction} className="tracker-inline-form">
                           <input type="hidden" name="slug" value={trip.slug} />
                           <input type="hidden" name="photoId" value={item.id} />
-                          <input type="hidden" name="returnTo" value="tracker" />
+                          <input type="hidden" name="returnTo" value="overview" />
                           <input type="hidden" name="field" value="title" />
                           <input
                             className="tracker-inline-input"
@@ -249,7 +249,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                         <form action={updateTripPhotoAction} className="tracker-inline-form tracker-inline-form-caption">
                           <input type="hidden" name="slug" value={trip.slug} />
                           <input type="hidden" name="photoId" value={item.id} />
-                          <input type="hidden" name="returnTo" value="tracker" />
+                          <input type="hidden" name="returnTo" value="overview" />
                           <input type="hidden" name="field" value="caption" />
                           <textarea
                             className="tracker-inline-input tracker-inline-textarea"
@@ -267,7 +267,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                           <form action={deleteTripPhotoAction}>
                             <input type="hidden" name="slug" value={trip.slug} />
                             <input type="hidden" name="photoId" value={item.id} />
-                            <input type="hidden" name="returnTo" value="tracker" />
+                            <input type="hidden" name="returnTo" value="overview" />
                             <button className="tracker-delete-button" type="submit" aria-label={`Delete ${item.originalFilename}`}>
                               [x] Delete
                             </button>
@@ -303,6 +303,9 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                     <li key={`point-${point.id}`} className="day-stop-card tracker-point-item">
                       <div className="tracker-point-header">
                         <div className="tracker-point-header-main">
+                          {point.source === "checkin" && (
+                            <img src="/rv.png" alt="" aria-hidden className="tracker-checkin-rv-icon" />
+                          )}
                           <strong>{resolveTrackerPointLabel(point, trackerCandidates)}</strong>
                           <span>{formatPointTimestamp(point.recordedAt, entry.timezone)}</span>
                         </div>
@@ -358,7 +361,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                         <form action={deleteTripPostAction}>
                           <input type="hidden" name="slug" value={trip.slug} />
                           <input type="hidden" name="postId" value={post.id} />
-                          <input type="hidden" name="returnTo" value="tracker" />
+                          <input type="hidden" name="returnTo" value="overview" />
                           <button className="tracker-delete-button" type="submit" aria-label="Delete post">
                             [x] Delete
                           </button>
@@ -375,7 +378,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                         <form action={updateTripPostAction} className="tracker-inline-form">
                           <input type="hidden" name="slug" value={trip.slug} />
                           <input type="hidden" name="postId" value={post.id} />
-                          <input type="hidden" name="returnTo" value="tracker" />
+                          <input type="hidden" name="returnTo" value="overview" />
                           <input type="hidden" name="field" value="title" />
                           <input className="tracker-inline-input" name="value" defaultValue={post.title} />
                           <button className="button-secondary tracker-inline-save" type="submit">
@@ -385,7 +388,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                         <form action={updateTripPostAction} className="tracker-inline-form tracker-inline-form-caption">
                           <input type="hidden" name="slug" value={trip.slug} />
                           <input type="hidden" name="postId" value={post.id} />
-                          <input type="hidden" name="returnTo" value="tracker" />
+                          <input type="hidden" name="returnTo" value="overview" />
                           <input type="hidden" name="field" value="body" />
                           <textarea className="tracker-inline-input tracker-inline-textarea" name="value" defaultValue={post.body} rows={3} />
                           <button className="button-secondary tracker-inline-save" type="submit">
@@ -395,7 +398,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                         <form action={uploadTripPostMediaAction} className="tracker-inline-form tracker-post-media-upload">
                           <input type="hidden" name="slug" value={trip.slug} />
                           <input type="hidden" name="postId" value={post.id} />
-                          <input type="hidden" name="returnTo" value="tracker" />
+                          <input type="hidden" name="returnTo" value="overview" />
                           <input type="file" name="media" accept="image/*,video/*" multiple />
                           <button className="button-secondary tracker-inline-save" type="submit">
                             Upload media
@@ -427,7 +430,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                                     <form action={updateTripPostMediaAction} className="tracker-inline-form">
                                       <input type="hidden" name="slug" value={trip.slug} />
                                       <input type="hidden" name="mediaId" value={item.id} />
-                                      <input type="hidden" name="returnTo" value="tracker" />
+                                      <input type="hidden" name="returnTo" value="overview" />
                                       <input type="hidden" name="field" value="title" />
                                       <input className="tracker-inline-input" name="value" defaultValue={mediaTitle} placeholder="Title" />
                                       <button className="button-secondary tracker-inline-save" type="submit">
@@ -437,7 +440,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                                     <form action={updateTripPostMediaAction} className="tracker-inline-form tracker-inline-form-caption">
                                       <input type="hidden" name="slug" value={trip.slug} />
                                       <input type="hidden" name="mediaId" value={item.id} />
-                                      <input type="hidden" name="returnTo" value="tracker" />
+                                      <input type="hidden" name="returnTo" value="overview" />
                                       <input type="hidden" name="field" value="caption" />
                                       <textarea className="tracker-inline-input tracker-inline-textarea" name="value" defaultValue={item.caption ?? ""} rows={2} placeholder="Caption" />
                                       <button className="button-secondary tracker-inline-save" type="submit">
@@ -447,7 +450,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                                     <form action={deleteTripPostMediaAction}>
                                       <input type="hidden" name="slug" value={trip.slug} />
                                       <input type="hidden" name="mediaId" value={item.id} />
-                                      <input type="hidden" name="returnTo" value="tracker" />
+                                      <input type="hidden" name="returnTo" value="overview" />
                                       <button className="tracker-delete-button" type="submit" aria-label={`Delete ${item.originalFilename}`}>
                                         [x] Delete
                                       </button>

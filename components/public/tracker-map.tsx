@@ -103,14 +103,9 @@ export function TrackerMap({ points }: TrackerMapProps) {
           map,
           position: { lat: point.latitude, lng: point.longitude },
           title: point.label,
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: point.source === "checkin" ? 7 : 4,
-            fillColor: point.source === "checkin" ? "#10233f" : "#3d679e",
-            fillOpacity: 1,
-            strokeColor: "#ffffff",
-            strokeWeight: 2
-          }
+          icon: point.source === "checkin"
+            ? { url: "/rv.png", scaledSize: new google.maps.Size(52, 28), anchor: new google.maps.Point(26, 28) }
+            : { path: google.maps.SymbolPath.CIRCLE, scale: 4, fillColor: "#3d679e", fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 }
         });
 
         marker.addListener("click", () => {

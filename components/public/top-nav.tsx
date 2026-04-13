@@ -1,0 +1,61 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faLock, faLockOpen } from "@fortawesome/free-solid-svg-icons";
+import { useEditMode } from "@/components/ui/edit-mode";
+
+type TopNavProps = {
+  tripSlug: string;
+  isAdmin: boolean;
+};
+
+function LockTab() {
+  const { isUnlocked, setIsUnlocked } = useEditMode();
+
+  return (
+    <button
+      className={`top-nav-tab${isUnlocked ? " active" : ""}`}
+      type="button"
+      onClick={() => setIsUnlocked(!isUnlocked)}
+      title={isUnlocked ? "Lock editing" : "Unlock editing"}
+    >
+      <FontAwesomeIcon icon={isUnlocked ? faLockOpen : faLock} />
+      {isUnlocked ? "Unlocked" : "Locked"}
+    </button>
+  );
+}
+
+export function TopNav({ tripSlug, isAdmin }: TopNavProps) {
+  const pathname = usePathname();
+
+  const overviewPath = `/trips/${tripSlug}/overview`;
+  const detailsPath = `/trips/${tripSlug}`;
+
+  const overviewActive = pathname.startsWith(overviewPath);
+  const detailsActive = !overviewActive && pathname.startsWith(detailsPath);
+
+  return (
+    <nav className="top-nav-tabs">
+      {tripSlug && (
+        <>
+          <Link
+            href={detailsPath}
+            className={`top-nav-tab${detailsActive ? " active" : ""}`}
+          >
+            Details
+          </Link>
+          <Link
+            href={overviewPath}
+            className={`top-nav-tab${overviewActive ? " active" : ""}`}
+          >
+            <img src="/rv.png" alt="" aria-hidden className="top-nav-tab-rv" />
+            Overview
+          </Link>
+        </>
+      )}
+      {isAdmin && <LockTab />}
+    </nav>
+  );
+}

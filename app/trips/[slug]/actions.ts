@@ -20,7 +20,7 @@ function buildTripRedirect(slug: string, params: Record<string, string>) {
 
 function buildTrackerRedirect(slug: string, params: Record<string, string> = {}) {
   const search = new URLSearchParams(params);
-  return `/trips/${slug}/tracker${search.toString() ? `?${search.toString()}` : ""}`;
+  return `/trips/${slug}/overview${search.toString() ? `?${search.toString()}` : ""}`;
 }
 
 function buildDayMediaTitle(dayNumber: number, locationName: string) {
@@ -31,7 +31,7 @@ async function revalidateTrip(slug: string) {
   revalidatePath(`/trips/${slug}`);
   revalidatePath(`/trips/${slug}/locations`);
   revalidatePath(`/trips/${slug}/summary`);
-  revalidatePath(`/trips/${slug}/tracker`);
+  revalidatePath(`/trips/${slug}/overview`);
   revalidatePath(`/trips/${slug}/batch-activities`);
   revalidatePath("/");
 }
@@ -855,7 +855,7 @@ export async function deleteTripPhotoAction(formData: FormData) {
 
   await deleteUploadedPhoto(photo.filePath);
   await revalidateTrip(slug);
-  if (returnTo === "tracker") {
+  if (returnTo === "overview") {
     redirect(buildTrackerRedirect(slug));
   }
   redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
@@ -883,7 +883,7 @@ export async function updateTripPhotoAction(formData: FormData) {
   });
 
   await revalidateTrip(slug);
-  if (returnTo === "tracker") {
+  if (returnTo === "overview") {
     redirect(buildTrackerRedirect(slug));
   }
   redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
@@ -949,7 +949,7 @@ export async function createTripPostAction(formData: FormData) {
   });
 
   await revalidateTrip(slug);
-  if (returnTo === "tracker") {
+  if (returnTo === "overview") {
     redirect(buildTrackerRedirect(slug));
   }
   redirect(buildTripRedirect(slug, { day: selectedDayNumber, added: title, mode: "post" }));
@@ -977,7 +977,7 @@ export async function updateTripPostAction(formData: FormData) {
   });
 
   await revalidateTrip(slug);
-  if (returnTo === "tracker") {
+  if (returnTo === "overview") {
     redirect(buildTrackerRedirect(slug));
   }
   redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
@@ -1012,7 +1012,7 @@ export async function deleteTripPostAction(formData: FormData) {
 
   await Promise.all(post.media.map((media) => deleteUploadedPhoto(media.filePath)));
   await revalidateTrip(slug);
-  if (returnTo === "tracker") {
+  if (returnTo === "overview") {
     redirect(buildTrackerRedirect(slug));
   }
   redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
@@ -1066,7 +1066,7 @@ export async function uploadTripPostMediaAction(formData: FormData) {
   }
 
   await revalidateTrip(slug);
-  if (returnTo === "tracker") {
+  if (returnTo === "overview") {
     redirect(buildTrackerRedirect(slug));
   }
   redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
@@ -1094,7 +1094,7 @@ export async function updateTripPostMediaAction(formData: FormData) {
   });
 
   await revalidateTrip(slug);
-  if (returnTo === "tracker") {
+  if (returnTo === "overview") {
     redirect(buildTrackerRedirect(slug));
   }
   redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
@@ -1125,7 +1125,7 @@ export async function deleteTripPostMediaAction(formData: FormData) {
 
   await deleteUploadedPhoto(media.filePath);
   await revalidateTrip(slug);
-  if (returnTo === "tracker") {
+  if (returnTo === "overview") {
     redirect(buildTrackerRedirect(slug));
   }
   redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
