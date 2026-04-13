@@ -174,6 +174,9 @@ export function TripMap({ days, hotDogPlaces, trackPoints, centerOn, selectedDay
   const [livePosition, setLivePosition] = useState<{ latitude: number; longitude: number } | null>(null);
   const initializingRef = useRef(false);
   const instanceRef = useRef<MapInstance | null>(null);
+  // Track centerOn in a ref so the async init effect can apply it after the map is ready
+  const centerOnRef = useRef(centerOn);
+  useEffect(() => { centerOnRef.current = centerOn; }, [centerOn]);
 
   useEffect(() => {
     if (!canEdit || !navigator.geolocation) return;
@@ -241,10 +244,10 @@ export function TripMap({ days, hotDogPlaces, trackPoints, centerOn, selectedDay
         map.fitBounds(bounds, { top: 36, right: 36, bottom: 36, left: 36 });
       }
 
-      // Active route polyline
+      // Active route polyline (selected day — yellow to distinguish from red GPS tracker path)
       const activeRoute = new google.maps.Polyline({
         path: [],
-        strokeColor: "#c62839",
+        strokeColor: "#f0b429",
         strokeWeight: 8,
         strokeOpacity: 1,
         geodesic: true,
@@ -385,6 +388,12 @@ export function TripMap({ days, hotDogPlaces, trackPoints, centerOn, selectedDay
 
       instanceRef.current = { map, baseRoute, activeRoute, trackerRoute, trackerMarkers, markers, activityMarkers, hotDogMarkers, liveMarker: null, infoWindow };
       initializingRef.current = false;
+
+      // Apply any centerOn that arrived while the map was initializing
+      if (centerOnRef.current) {
+        map.panTo(centerOnRef.current);
+        map.setZoom(12);
+      }
     }
 
     load();

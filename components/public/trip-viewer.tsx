@@ -1078,13 +1078,17 @@ export function TripViewer({
             slug={trip.slug}
             value={viewMode}
             onSelectLocal={(next) => {
-              if (next === "tracker") {
-                const latest = [...trackerPoints].reverse().find((p) => p.source === "checkin");
-                setTrackerCenter(latest ? { lat: latest.latitude, lng: latest.longitude } : null);
-              } else {
-                setTrackerCenter(null);
-              }
+              if (next !== "tracker") setTrackerCenter(null);
               setViewMode(next);
+            }}
+            onTabClick={(next) => {
+              if (next === "tracker") {
+                const latest = trackerPoints.reduce<TripTrackerPoint | null>(
+                  (max, p) => (!max || p.recordedAt > max.recordedAt ? p : max),
+                  null
+                );
+                setTrackerCenter(latest ? { lat: latest.latitude, lng: latest.longitude } : null);
+              }
             }}
             showHotDogs={showHotDogs}
             className="trip-stage-tabs-wrap"

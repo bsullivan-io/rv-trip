@@ -12,6 +12,7 @@ type TripStageTabsProps = {
   slug: string;
   value: TripStageTabValue;
   onSelectLocal?: (value: TripStageTabValue) => void;
+  onTabClick?: (value: TripStageTabValue) => void;
   showHotDogs?: boolean;
   className?: string;
 };
@@ -24,7 +25,7 @@ const allTabs: Array<{ value: TripStageTabValue; label: string; imageIcon?: stri
   { value: "tracker", label: "Tracker", fontIcon: faRoute }
 ];
 
-export function TripStageTabs({ slug, value, onSelectLocal, showHotDogs, className }: TripStageTabsProps) {
+export function TripStageTabs({ slug, value, onSelectLocal, onTabClick, showHotDogs, className }: TripStageTabsProps) {
   const tabs = allTabs.filter((tab) => !tab.adminOnly || showHotDogs);
   const router = useRouter();
 
@@ -62,6 +63,7 @@ export function TripStageTabs({ slug, value, onSelectLocal, showHotDogs, classNa
           <TabsTrigger
             key={tab.value}
             value={tab.value}
+            onClick={() => onTabClick?.(tab.value)}
             className="trip-stage-tab"
             bg="transparent"
             color="muted"
