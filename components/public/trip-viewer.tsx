@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -637,10 +637,10 @@ export function TripViewer({
   deleteStopAction,
   deletePhotoAction
 }: TripViewerProps) {
-  const normalizedDays = trip.days.map((day) => ({
+  const normalizedDays = useMemo(() => trip.days.map((day) => ({
     ...day,
     locations: day.locations.length ? day.locations : [{ id: `${day.id}-fallback-location`, sortOrder: 1, note: null, place: day.endPlace }]
-  }));
+  })), [trip.days]);
   const progress = deriveTripProgress(normalizedDays, initialSelectedDayNumber || null);
   const { isUnlocked, showHotDogs, setShowHotDogs, author, setAuthor } = useEditMode();
   const [selectedDayNumber, setSelectedDayNumber] = useState(progress.selectedDayNumber);
@@ -871,10 +871,10 @@ export function TripViewer({
         longitude: stop.longitude as number
       }))
   ];
-  const selectDay = (dayNumber: number) => {
+  const selectDay = useCallback((dayNumber: number) => {
     setSelectedDayNumber(dayNumber);
     setPhoneSidebarOpen(false);
-  };
+  }, []);
 
   async function handleManualCheckIn() {
     if (!window.isSecureContext && window.location.hostname !== "localhost") {
