@@ -643,7 +643,8 @@ export function TripViewer({
   const progress = deriveTripProgress(normalizedDays, initialSelectedDayNumber || null);
   const { isUnlocked } = useEditMode();
   const [selectedDayNumber, setSelectedDayNumber] = useState(progress.selectedDayNumber);
-  const [viewMode, setViewMode] = useState<"map" | "calendar" | "locations" | "hotdogs">(initialViewMode);
+  const [viewMode, setViewMode] = useState<"map" | "calendar" | "locations" | "hotdogs" | "tracker">(initialViewMode);
+  const [trackerCenter, setTrackerCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [mapExpanded, setMapExpanded] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<TripMedia | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -1076,7 +1077,20 @@ export function TripViewer({
           }
         >
           <div className="trip-stage-toolbar">
-            <TripStageTabs slug={trip.slug} value={viewMode} onSelectLocal={setViewMode} className="desktop-only trip-stage-tabs-wrap" />
+            <TripStageTabs
+            slug={trip.slug}
+            value={viewMode}
+            onSelectLocal={(next) => {
+              if (next === "tracker") {
+                const latest = [...trackerPoints].reverse().find((p) => p.source === "checkin");
+                setTrackerCenter(latest ? { lat: latest.latitude, lng: latest.longitude } : null);
+              } else {
+                setTrackerCenter(null);
+              }
+              setViewMode(next);
+            }}
+            className="desktop-only trip-stage-tabs-wrap"
+          />
             <div className="phone-stage-selector mobile-only">
               <select
                 aria-label="View mode"
@@ -1102,7 +1116,7 @@ export function TripViewer({
               </button>
             </div>
           </div>
-          {canEdit ? <div className="toolbar-stack">
+          {editable ? <div className="toolbar-stack">
             <form action={handleSearchSubmit} className="toolbar-add-stop place-search-form">
               <input type="hidden" name="tripId" value={trip.id} />
               <input type="hidden" name="slug" value={trip.slug} />
@@ -1166,7 +1180,7 @@ export function TripViewer({
           {flash ? <p className={flash.type === "error" ? "form-error toolbar-flash" : "form-success toolbar-flash"}>{flash.message}</p> : null}
           {trackerFlash ? <p className={trackerFlash.type === "error" ? "form-error toolbar-flash" : "form-success toolbar-flash"}>{trackerFlash.message}</p> : null}
 
-          {viewMode === "map" ? (
+          {viewMode === "map" || viewMode === "tracker" ? (
             <div className={mapExpanded ? "map-container map-expanded" : "map-container"}>
               {mapExpanded ? <div className="map-overlay-backdrop" onClick={() => setMapExpanded(false)} /> : null}
               <div className="map-container-inner">
@@ -1183,6 +1197,8 @@ export function TripViewer({
                   key={mapExpanded ? "expanded" : "inline"}
                   days={normalizedDays}
                   hotDogPlaces={trip.hotDogPlaces}
+                  trackPoints={trackerPoints}
+                  centerOn={trackerCenter}
                   selectedDayNumber={selectedDay.dayNumber}
                   currentDayNumber={progress.currentDayNumber ?? selectedDay.dayNumber}
                   onSelectDay={selectDay}

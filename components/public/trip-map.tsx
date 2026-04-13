@@ -35,6 +35,16 @@ type MapDay = {
   stops: MapStop[];
 };
 
+type TrackerPoint = {
+  id: string;
+  latitude: number;
+  longitude: number;
+  source: "auto" | "checkin";
+  note: string | null;
+  cityName: string | null;
+  stateCode: string | null;
+};
+
 type TripMapProps = {
   days: MapDay[];
   hotDogPlaces: Array<{
@@ -45,6 +55,8 @@ type TripMapProps = {
     longitude: number;
     dayNumber: number;
   }>;
+  trackPoints?: TrackerPoint[];
+  centerOn?: { lat: number; lng: number } | null;
   selectedDayNumber: number;
   currentDayNumber: number;
   onSelectDay: (dayNumber: number) => void;
@@ -123,6 +135,8 @@ type MapInstance = {
   map: google.maps.Map;
   baseRoute: google.maps.Polyline;
   activeRoute: google.maps.Polyline;
+  trackerRoute: google.maps.Polyline;
+  trackerMarkers: google.maps.Marker[];
   markers: globalThis.Map<string, google.maps.Marker>;
   activityMarkers: globalThis.Map<string, google.maps.Marker>;
   hotDogMarkers: globalThis.Map<string, google.maps.Marker>;
@@ -154,7 +168,7 @@ function getHotDogIcon(zoom?: number) {
   };
 }
 
-export function TripMap({ days, hotDogPlaces, selectedDayNumber, currentDayNumber, onSelectDay, canEdit }: TripMapProps) {
+export function TripMap({ days, hotDogPlaces, trackPoints, centerOn, selectedDayNumber, currentDayNumber, onSelectDay, canEdit }: TripMapProps) {
   const containerId = useId().replace(/:/g, "");
   const mapRef = useRef<HTMLDivElement | null>(null);
   const [livePosition, setLivePosition] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -331,12 +345,42 @@ export function TripMap({ days, hotDogPlaces, selectedDayNumber, currentDayNumbe
         });
       });
 
+      // Tracker overlay
+      const trackerRoute = new google.maps.Polyline({
+        path: (trackPoints ?? []).map((p) => ({ lat: p.latitude, lng: p.longitude })),
+        strokeColor: "#c62839",
+        strokeWeight: 3,
+        strokeOpacity: 0.85,
+        geodesic: true,
+        map
+      });
+
+      const trackerMarkers: google.maps.Marker[] = [];
+      (trackPoints ?? []).filter((p) => p.source === "checkin").forEach((p) => {
+        const marker = new google.maps.Marker({
+          map,
+          position: { lat: p.latitude, lng: p.longitude },
+          title: [p.cityName, p.stateCode].filter(Boolean).join(", ") || "Check-in",
+          icon: { url: "/rv.png", scaledSize: new google.maps.Size(44, 24), anchor: new google.maps.Point(22, 24) }
+        });
+        marker.addListener("click", () => {
+          infoWindow.setContent(
+            [
+              `<strong>${[p.cityName, p.stateCode].filter(Boolean).join(", ") || "Check-in"}</strong>`,
+              p.note ? `<em>${p.note}</em>` : null
+            ].filter(Boolean).join("<br/>")
+          );
+          infoWindow.open({ map, anchor: marker });
+        });
+        trackerMarkers.push(marker);
+      });
+
       if (!mounted) {
         initializingRef.current = false;
         return;
       }
 
-      instanceRef.current = { map, baseRoute, activeRoute, markers, activityMarkers, hotDogMarkers, liveMarker: null, infoWindow };
+      instanceRef.current = { map, baseRoute, activeRoute, trackerRoute, trackerMarkers, markers, activityMarkers, hotDogMarkers, liveMarker: null, infoWindow };
       initializingRef.current = false;
     }
 
@@ -347,6 +391,8 @@ export function TripMap({ days, hotDogPlaces, selectedDayNumber, currentDayNumbe
       if (instanceRef.current) {
         instanceRef.current.baseRoute.setMap(null);
         instanceRef.current.activeRoute.setMap(null);
+        instanceRef.current.trackerRoute.setMap(null);
+        instanceRef.current.trackerMarkers.forEach((m) => m.setMap(null));
         instanceRef.current.markers.forEach((m) => m.setMap(null));
         instanceRef.current.activityMarkers.forEach((m) => m.setMap(null));
         instanceRef.current.hotDogMarkers.forEach((m) => m.setMap(null));
@@ -412,6 +458,14 @@ export function TripMap({ days, hotDogPlaces, selectedDayNumber, currentDayNumbe
       instance.map.setZoom(12);
     }
   }, [days, hotDogPlaces, selectedDayNumber, currentDayNumber]);
+
+  // Pan to specified location (tracker tab)
+  useEffect(() => {
+    const instance = instanceRef.current;
+    if (!instance || !centerOn) return;
+    instance.map.panTo(centerOn);
+    instance.map.setZoom(12);
+  }, [centerOn]);
 
   // Live position
   useEffect(() => {

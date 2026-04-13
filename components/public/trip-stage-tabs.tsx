@@ -11,7 +11,7 @@ export type TripStageTabValue = "map" | "calendar" | "locations" | "hotdogs" | "
 type TripStageTabsProps = {
   slug: string;
   value: TripStageTabValue;
-  onSelectLocal?: (value: Exclude<TripStageTabValue, "tracker">) => void;
+  onSelectLocal?: (value: TripStageTabValue) => void;
   className?: string;
 };
 
@@ -32,13 +32,13 @@ export function TripStageTabs({ slug, value, onSelectLocal, className }: TripSta
       onValueChange={(details) => {
         const next = details.value as TripStageTabValue;
 
-        if (next === "tracker") {
-          router.push(`/trips/${slug}/overview`);
+        if (onSelectLocal) {
+          onSelectLocal(next);
           return;
         }
 
-        if (onSelectLocal) {
-          onSelectLocal(next);
+        if (next === "tracker") {
+          router.push(`/trips/${slug}/overview`);
           return;
         }
 
