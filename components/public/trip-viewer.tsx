@@ -1313,8 +1313,7 @@ export function TripViewer({
             <p className="eyebrow">Day {selectedDay.dayNumber} · {formatDateLabel(selectedDay.date)}</p>
             <InlineEditableText canEdit={editable} label="day title" value={selectedDay.title} action={updateDayAction} hiddenFields={dayHidden} field="title" className="trip-heading-edit" />
             <div className="chip-row">
-              <span className="chip">{selectedDay.type === "travel" ? "Travel day" : "Basecamp day"}</span>
-              <span className="chip">{selectedDay.miles ? `${selectedDay.miles} miles` : "No long-haul mileage"}</span>
+<span className="chip">{selectedDay.miles ? `${selectedDay.miles} miles` : "No long-haul mileage"}</span>
               {selectedDay.durationSeconds ? <span className="chip">{formatDriveTime(selectedDay.durationSeconds)}</span> : null}
               <span className="chip">{selectedDay.locations.length} location{selectedDay.locations.length === 1 ? "" : "s"}</span>
             </div>
