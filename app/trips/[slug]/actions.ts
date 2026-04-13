@@ -9,7 +9,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getPlaceDetails, searchTextPlaces } from "@/lib/google-places";
 import { recomputeTripActivityDistances, recomputeTripRoutes } from "@/lib/google-routes";
 import { distanceMiles, makeUniqueSlug, parseGoogleMapsLink } from "@/lib/google-maps";
-import { deleteUploadedPhoto, extractPhotoMetadata, matchPhotoToDay, saveUploadedMedia, saveUploadedPhoto } from "@/lib/photo-import";
+import { deleteUploadedPhoto, extractPhotoMetadata, saveUploadedMedia, saveUploadedPhoto } from "@/lib/photo-import";
 import { prisma } from "@/lib/prisma";
 import { slugify, toOptionalString, toRequiredString } from "@/lib/utils";
 
@@ -443,29 +443,22 @@ export async function uploadTripPhotoAction(formData: FormData) {
   try {
     const { buffer, relativePath } = await saveUploadedPhoto(file);
     const metadata = await extractPhotoMetadata(buffer);
-    const trip = await loadTripForAssignment(tripId);
-    const matchedDay = matchPhotoToDay(
-      trip.days.map((day) => ({
-        id: day.id,
-        dayNumber: day.dayNumber,
-        date: day.date?.toISOString() ?? null,
-        locations: day.locations,
-        endPlace: {
-          name: day.endPlace.name,
-          latitude: day.endPlace.latitude,
-          longitude: day.endPlace.longitude
-        }
-      })),
-      metadata,
-      selectedDayNumber
-    );
+
+    const day = await prisma.tripDay.findFirst({
+      where: { tripId, dayNumber: selectedDayNumber },
+      include: { endPlace: true }
+    });
+
+    if (!day) {
+      redirect(buildTripRedirect(slug, { error: "Select a day before uploading a photo." }));
+    }
 
     await prisma.tripPhoto.create({
       data: {
-        tripDayId: matchedDay.id,
+        tripDayId: day.id,
         filePath: relativePath,
         originalFilename: file.name,
-        title: `Day ${matchedDay.dayNumber} - ${matchedDay.endPlace.name}`,
+        title: `Day ${day.dayNumber} - ${day.endPlace.name}`,
         caption: null,
         mimeType: file.type || null,
         capturedAt: new Date(),
@@ -478,7 +471,7 @@ export async function uploadTripPhotoAction(formData: FormData) {
     redirect(
       buildTripRedirect(slug, {
         added: file.name,
-        day: String(matchedDay.dayNumber),
+        day: String(day.dayNumber),
         mode: "photo"
       })
     );
