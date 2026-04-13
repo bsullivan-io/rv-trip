@@ -1589,6 +1589,15 @@ textarea {
   margin: 0;
 }
 
+.tracker-media-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
 .tracker-media {
   width: 100%;
   aspect-ratio: 1;

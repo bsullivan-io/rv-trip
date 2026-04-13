@@ -12,6 +12,7 @@ import {
   uploadTripPostMediaAction
 } from "@/app/trips/[slug]/actions";
 import { TrackerMap } from "@/components/public/tracker-map";
+import { OverviewMediaLightbox } from "@/components/public/overview-media-lightbox";
 import { EditModeGate } from "@/components/ui/edit-mode";
 import { getAdminSession } from "@/lib/auth";
 import { formatFullDateLabel, formatShortDate } from "@/lib/dates";
@@ -111,9 +112,26 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
       title: photo.title,
       caption: photo.caption,
       mimeType: photo.mimeType,
+      capturedAt: photo.capturedAt?.toISOString() ?? null,
       dayNumber: day.dayNumber
     }))
   );
+  const allMedia = [
+    ...media,
+    ...trip.days.flatMap((day) =>
+      day.posts.flatMap((post) =>
+        post.media.map((item) => ({
+          id: item.id,
+          filePath: item.filePath,
+          originalFilename: item.originalFilename,
+          title: item.title,
+          caption: item.caption,
+          mimeType: item.mimeType,
+          capturedAt: item.capturedAt?.toISOString() ?? null
+        }))
+      )
+    )
+  ];
   const sortedPoints = [...trip.trackPoints].sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime());
 
   function inferTimezone(near: Date): string | null {
@@ -215,11 +233,13 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
 
                 return (
                   <figure key={item.id} className="tracker-media-card">
-                  {item.mimeType?.startsWith("video/") ? (
-                    <video className="tracker-media" src={item.filePath} controls playsInline preload="metadata" />
-                  ) : (
-                    <img className="tracker-media" src={item.filePath} alt={item.originalFilename} />
-                  )}
+                  <button type="button" data-lightbox-id={item.id} className="tracker-media-button">
+                    {item.mimeType?.startsWith("video/") ? (
+                      <video className="tracker-media" src={item.filePath} playsInline preload="metadata" />
+                    ) : (
+                      <img className="tracker-media" src={item.filePath} alt={item.originalFilename} />
+                    )}
+                  </button>
                   <figcaption>
                     <EditModeGate
                       enabled={Boolean(adminSession)}
@@ -439,11 +459,13 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
 
                           return (
                             <figure key={item.id} className="tracker-media-card tracker-post-media-card">
-                              {isVideoMedia(item.mimeType) ? (
-                                <video className="tracker-media" src={item.filePath} controls playsInline preload="metadata" />
-                              ) : (
-                                <img className="tracker-media" src={item.filePath} alt={item.originalFilename} />
-                              )}
+                              <button type="button" data-lightbox-id={item.id} className="tracker-media-button">
+                                {isVideoMedia(item.mimeType) ? (
+                                  <video className="tracker-media" src={item.filePath} playsInline preload="metadata" />
+                                ) : (
+                                  <img className="tracker-media" src={item.filePath} alt={item.originalFilename} />
+                                )}
+                              </button>
                               <figcaption>
                                 <EditModeGate
                                   enabled={Boolean(adminSession)}
@@ -497,6 +519,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
           </article>
         </section>
       </section>
+      <OverviewMediaLightbox allMedia={allMedia} />
     </main>
   );
 }

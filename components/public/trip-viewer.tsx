@@ -697,6 +697,28 @@ export function TripViewer({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [selectedMedia]);
 
+  // Sync ?media= param with open/closed state
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (selectedMedia) {
+      params.set("media", selectedMedia.id);
+      history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+    } else if (params.has("media")) {
+      params.delete("media");
+      const search = params.toString();
+      history.replaceState(null, "", `${window.location.pathname}${search ? `?${search}` : ""}`);
+    }
+  }, [selectedMedia]);
+
+  // Auto-open modal from ?media= on mount
+  useEffect(() => {
+    const mediaId = new URLSearchParams(window.location.search).get("media");
+    if (!mediaId) return;
+    const allMedia = trip.days.flatMap((d) => [...d.photos, ...d.posts.flatMap((p) => p.media)]);
+    const found = allMedia.find((m) => m.id === mediaId);
+    if (found) setSelectedMedia(found);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!searchQuery.trim() || searchQuery.includes("://")) {
       setSearchResults([]);
@@ -771,31 +793,12 @@ export function TripViewer({
   }
 
   async function handleSharePhoto(photo: TripMedia) {
-    const shareUrl = new URL(photo.filePath, window.location.origin).toString();
-    const mimeType = photo.mimeType || (isVideoMedia(photo) ? "video/mp4" : "image/jpeg");
+    const shareUrl = window.location.href;
 
     if (navigator.share) {
       try {
-        const response = await fetch(shareUrl);
-        if (response.ok) {
-          const blob = await response.blob();
-          const file = new File([blob], photo.originalFilename, {
-            type: blob.type || mimeType
-          });
-
-          if (!("canShare" in navigator) || navigator.canShare?.({ files: [file] })) {
-            await navigator.share({
-              title: photo.originalFilename,
-              text: `Trip photo from Day ${selectedDay.dayNumber}`,
-              files: [file]
-            });
-            return;
-          }
-        }
-
         await navigator.share({
-          title: photo.originalFilename,
-          text: `Trip photo from Day ${selectedDay.dayNumber}`,
+          title: photo.title ?? photo.originalFilename,
           url: shareUrl
         });
         return;
@@ -808,7 +811,7 @@ export function TripViewer({
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      window.alert("Photo link copied to clipboard.");
+      window.alert("Link copied to clipboard.");
     } catch {
       window.open(shareUrl, "_blank", "noopener,noreferrer");
     }

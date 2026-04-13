@@ -468,7 +468,7 @@ export async function uploadTripPhotoAction(formData: FormData) {
         title: `Day ${matchedDay.dayNumber} - ${matchedDay.endPlace.name}`,
         caption: null,
         mimeType: file.type || null,
-        capturedAt: metadata.capturedAt,
+        capturedAt: new Date(),
         latitude: metadata.latitude,
         longitude: metadata.longitude
       }
@@ -1060,7 +1060,7 @@ export async function uploadTripPostMediaAction(formData: FormData) {
         title: buildDayMediaTitle(post.tripDay.dayNumber, post.tripDay.endPlace.name),
         caption: null,
         mimeType: file.type || null,
-        capturedAt: metadata.capturedAt,
+        capturedAt: new Date(),
         latitude: metadata.latitude,
         longitude: metadata.longitude
       }
