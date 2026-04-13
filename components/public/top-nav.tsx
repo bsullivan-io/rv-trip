@@ -8,26 +8,25 @@ import { useEditMode } from "@/components/ui/edit-mode";
 
 type TopNavProps = {
   tripSlug: string;
-  isAdmin: boolean;
 };
 
-function LockTab() {
+export function FooterLock() {
   const { isUnlocked, setIsUnlocked } = useEditMode();
 
   return (
     <button
-      className={`top-nav-tab${isUnlocked ? " active" : ""}`}
+      className="footer-lock-button"
       type="button"
       onClick={() => setIsUnlocked(!isUnlocked)}
       title={isUnlocked ? "Lock editing" : "Unlock editing"}
     >
       <FontAwesomeIcon icon={isUnlocked ? faLockOpen : faLock} />
-      {isUnlocked ? "Unlocked" : "Locked"}
+      {isUnlocked ? " Unlocked" : " Locked"}
     </button>
   );
 }
 
-export function TopNav({ tripSlug, isAdmin }: TopNavProps) {
+export function TopNav({ tripSlug }: TopNavProps) {
   const pathname = usePathname();
 
   const overviewPath = `/trips/${tripSlug}/overview`;
@@ -36,26 +35,24 @@ export function TopNav({ tripSlug, isAdmin }: TopNavProps) {
   const overviewActive = pathname.startsWith(overviewPath);
   const detailsActive = !overviewActive && pathname.startsWith(detailsPath);
 
+  if (!tripSlug) return null;
+
   return (
     <nav className="top-nav-tabs">
-      {tripSlug && (
-        <>
-          <Link
-            href={detailsPath}
-            className={`top-nav-tab${detailsActive ? " active" : ""}`}
-          >
-            Details
-          </Link>
-          <Link
-            href={overviewPath}
-            className={`top-nav-tab${overviewActive ? " active" : ""}`}
-          >
-            <img src="/rv.png" alt="" aria-hidden className="top-nav-tab-rv" />
-            Overview
-          </Link>
-        </>
-      )}
-      {isAdmin && <LockTab />}
+      <Link
+        href={overviewPath}
+        className={`top-nav-tab${overviewActive ? " active" : ""}`}
+      >
+        <img src="/map_icon.png" alt="" aria-hidden className="top-nav-tab-rv" />
+        Overview
+      </Link>
+      <Link
+        href={detailsPath}
+        className={`top-nav-tab${detailsActive ? " active" : ""}`}
+      >
+        <img src="/rv.png" alt="" aria-hidden className="top-nav-tab-rv" />
+        Details
+      </Link>
     </nav>
   );
 }

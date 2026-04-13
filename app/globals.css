@@ -127,6 +127,18 @@ textarea {
   text-decoration: underline;
 }
 
+.footer-lock-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
 .tracker-checkin-rv-icon {
   height: 20px;
   width: auto;
