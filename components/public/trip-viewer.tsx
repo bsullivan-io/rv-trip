@@ -979,26 +979,6 @@ export function TripViewer({
             multiline
             className="trip-summary"
           />
-          <div className="trip-status-banner">
-            {progress.state === "active" ? (
-              <>
-                <strong>Trip happening now!</strong>
-                {(() => {
-                  const latest = [...trackerPoints].reverse().find((p) => p.source === "checkin");
-                  return latest?.cityName ? (
-                    <span>{latest.cityName}{latest.stateCode ? `, ${latest.stateCode}` : ""}</span>
-                  ) : null;
-                })()}
-              </>
-            ) : (
-              <>
-                <strong>{progress.label}</strong>
-                {progress.state === "upcoming" && trip.startDate ? (
-                  <span>Starts {formatShortDate(trip.startDate)}.</span>
-                ) : null}
-              </>
-            )}
-          </div>
           <div className="chip-row">
             {trip.totalMiles ? <span className="chip">{trip.totalMiles} miles</span> : null}
             <span className="chip">{trip.days.length} days</span>
@@ -1471,7 +1451,7 @@ export function TripViewer({
                   <div className="day-stop-group">
                     <h3>Staying at</h3>
                     <ul className="day-stop-cards">
-                      <li className="day-stop-card">
+                      <li className="day-stop-card day-stop-card-accent">
                         <InlineEditableText
                           canEdit={editable}
                           label="accommodation name"

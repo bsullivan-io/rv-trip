@@ -1112,6 +1112,10 @@ textarea {
   padding: 12px 14px;
 }
 
+.day-stop-card-accent {
+  border-left-color: var(--accent);
+}
+
 .day-posts-primary {
   margin-top: 22px;
   padding-top: 20px;
