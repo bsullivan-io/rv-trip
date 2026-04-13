@@ -1093,7 +1093,7 @@ export function TripViewer({
               </button>
             </div>
           </div>
-          <div className="toolbar-stack">
+          {canEdit ? <div className="toolbar-stack">
             <form action={handleSearchSubmit} className="toolbar-add-stop place-search-form">
               <input type="hidden" name="tripId" value={trip.id} />
               <input type="hidden" name="slug" value={trip.slug} />
@@ -1153,7 +1153,7 @@ export function TripViewer({
                 </button>
               </div>
             ) : null}
-          </div>
+          </div> : null}
           {flash ? <p className={flash.type === "error" ? "form-error toolbar-flash" : "form-success toolbar-flash"}>{flash.message}</p> : null}
           {trackerFlash ? <p className={trackerFlash.type === "error" ? "form-error toolbar-flash" : "form-success toolbar-flash"}>{trackerFlash.message}</p> : null}
 
