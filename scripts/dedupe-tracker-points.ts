@@ -43,8 +43,7 @@ async function main() {
       if (point.source === "auto") {
         const shouldKeep = shouldPersistAutoPoint(lastKeptAutoOrCheckin, {
           latitude: point.latitude,
-          longitude: point.longitude,
-          recordedAt: point.recordedAt
+          longitude: point.longitude
         });
 
         if (!shouldKeep) {

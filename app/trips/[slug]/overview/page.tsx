@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import {
   deleteTripPostAction,
@@ -16,11 +18,50 @@ import { OverviewMediaLightbox } from "@/components/public/overview-media-lightb
 import { EditModeGate } from "@/components/ui/edit-mode";
 import { getAdminSession } from "@/lib/auth";
 import { formatFullDateLabel, formatShortDate } from "@/lib/dates";
-import { getTripTrackerBySlug } from "@/lib/data";
+import { getMediaById, getTripTrackerBySlug } from "@/lib/data";
 import { resolveTrackerPointLabel } from "@/lib/tracker-labels";
 import { sumTrackedMiles } from "@/lib/tracker";
 
 export const dynamic = "force-dynamic";
+
+async function getBaseUrl() {
+  const headersList = await headers();
+  const host = headersList.get("host") ?? "";
+  const protocol = host.startsWith("localhost") ? "http" : "https";
+  return `${protocol}://${host}`;
+}
+
+export async function generateMetadata({
+  searchParams
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ media?: string }>;
+}): Promise<Metadata> {
+  const { media: mediaId } = await searchParams;
+  if (!mediaId) return { title: "Make a Mile" };
+
+  const media = await getMediaById(mediaId);
+  if (!media) return { title: "Make a Mile" };
+
+  const label = media.caption ?? media.title ?? media.originalFilename;
+  const title = `${label} - Make a Mile`;
+  const isVideo = media.mimeType?.startsWith("video/") ?? false;
+  const baseUrl = await getBaseUrl();
+  const imageUrl = `${baseUrl}${media.filePath}`;
+
+  return {
+    title,
+    openGraph: {
+      title,
+      ...(!isVideo && { images: [{ url: imageUrl }] })
+    },
+    twitter: {
+      card: isVideo ? "summary" : "summary_large_image",
+      title,
+      ...(!isVideo && { images: [imageUrl] })
+    }
+  };
+}
 
 type TrackerPageProps = {
   params: Promise<{

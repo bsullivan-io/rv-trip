@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import {
   addPlaceSearchAction,
@@ -19,10 +21,44 @@ import {
   updateTripInlineAction
 } from "@/app/trips/[slug]/actions";
 import { getAdminSession } from "@/lib/auth";
-import { getTripBySlug } from "@/lib/data";
+import { getMediaById, getTripBySlug } from "@/lib/data";
 import { TripViewer } from "@/components/public/trip-viewer";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  searchParams
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ media?: string; day?: string; view?: string }>;
+}): Promise<Metadata> {
+  const { media: mediaId } = await searchParams;
+  if (!mediaId) return { title: "Make a Mile" };
+
+  const media = await getMediaById(mediaId);
+  if (!media) return { title: "Make a Mile" };
+
+  const label = media.caption ?? media.title ?? media.originalFilename;
+  const title = `${label} - Make a Mile`;
+  const isVideo = media.mimeType?.startsWith("video/") ?? false;
+  const headersList = await headers();
+  const host = headersList.get("host") ?? "";
+  const protocol = host.startsWith("localhost") ? "http" : "https";
+  const imageUrl = `${protocol}://${host}${media.filePath}`;
+
+  return {
+    title,
+    openGraph: {
+      title,
+      ...(!isVideo && { images: [{ url: imageUrl }] })
+    },
+    twitter: {
+      card: isVideo ? "summary" : "summary_large_image",
+      title,
+      ...(!isVideo && { images: [imageUrl] })
+    }
+  };
+}
 
 type TripPageProps = {
   params: Promise<{

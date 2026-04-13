@@ -155,3 +155,18 @@ export async function getPlaces() {
     orderBy: { name: "asc" }
   });
 }
+
+export async function getMediaById(id: string) {
+  const select = {
+    filePath: true,
+    title: true,
+    caption: true,
+    mimeType: true,
+    originalFilename: true
+  } as const;
+  const [photo, postMedia] = await Promise.all([
+    prisma.tripPhoto.findUnique({ where: { id }, select }),
+    prisma.tripPostMedia.findUnique({ where: { id }, select })
+  ]);
+  return photo ?? postMedia ?? null;
+}

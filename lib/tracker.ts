@@ -188,8 +188,7 @@ export async function persistTrackerPoint(input: {
     if (
       !shouldPersistAutoPoint(lastPoint, {
         latitude: input.latitude,
-        longitude: input.longitude,
-        recordedAt
+        longitude: input.longitude
       })
     ) {
       return { stored: false as const, reason: "threshold" };
