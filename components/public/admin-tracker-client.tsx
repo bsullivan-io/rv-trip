@@ -35,7 +35,7 @@ export function AdminTrackerClient({ enabled }: AdminTrackerClientProps) {
     const watchId = navigator.geolocation.watchPosition(
       async (position) => {
         const now = Date.now();
-        if (now - lastSentAtRef.current < 120000) {
+        if (now - lastSentAtRef.current < 30000) {
           return;
         }
 

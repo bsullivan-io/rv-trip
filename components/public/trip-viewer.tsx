@@ -854,9 +854,24 @@ export function TripViewer({
     places: trip.hotDogPlaces.filter((place) => place.dayNumber === day.dayNumber)
   }));
   const totalActivities = normalizedDays.reduce((count, day) => count + day.stops.filter((stop) => stop.kind === "activity").length, 0);
-  const selectedDayCheckIns = trackerPoints
-    .filter((point) => point.tripDayId === selectedDay.id && (point.source === "checkin" || Boolean(point.note)))
-    .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt));
+  const selectedDayCheckIns = (() => {
+    const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+    const candidates = trackerPoints
+      .filter((point) => point.tripDayId === selectedDay.id && (point.source === "checkin" || Boolean(point.note)))
+      .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
+    let lastAutoTime = -Infinity;
+    return candidates
+      .filter((point) => {
+        if (point.source === "checkin") return true;
+        const t = new Date(point.recordedAt).getTime();
+        if (t - lastAutoTime >= FIFTEEN_MINUTES_MS) {
+          lastAutoTime = t;
+          return true;
+        }
+        return false;
+      })
+      .sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
+  })();
   const trackerCandidates = [
     ...selectedDay.locations.map((location) => ({
       name: location.place.name,
