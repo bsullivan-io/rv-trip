@@ -2,6 +2,7 @@ import { parse } from "exifr";
 import { randomUUID } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 import { distanceMiles } from "@/lib/google-maps";
 import { parseUtcDateKey } from "@/lib/trip-stays";
 
@@ -118,16 +119,26 @@ export function matchPhotoToDay(days: TripDayMatch[], metadata: PhotoMetadata, s
   return candidates[0] ?? days.find((day) => day.dayNumber === selectedDayNumber) ?? days[0];
 }
 
+const IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/heic", "image/heif", "image/webp", "image/png", "image/tiff"]);
+
 export async function saveUploadedMedia(file: File, directory = "trip-photos") {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
+  const isImage = IMAGE_MIME_TYPES.has(file.type?.toLowerCase());
+
+  // Auto-rotate based on EXIF orientation so OG crawlers and any viewer see
+  // the correct orientation (iPhones store raw sensor data + an orientation tag)
+  const outputBuffer = isImage
+    ? await sharp(buffer).rotate().toBuffer()
+    : buffer;
+
   const extension = path.extname(file.name) || ".jpg";
   const filename = `${randomUUID()}${extension.toLowerCase()}`;
   const relativePath = path.join("uploads", directory, filename);
   const outputPath = path.join(process.cwd(), "public", relativePath);
 
   await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, buffer);
+  await writeFile(outputPath, outputBuffer);
 
   return {
     buffer,
