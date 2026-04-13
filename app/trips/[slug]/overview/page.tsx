@@ -158,7 +158,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
           fallback={null}
         >
           <div className="trip-summary-toolbar">
-            <Link className="button-secondary" href={`/trips/${trip.slug}`}>
+            <Link className="button-secondary" href={`/trips/${trip.slug}/details`}>
               Back to Trip
             </Link>
           </div>

@@ -44,7 +44,7 @@ export function TripStageTabs({ slug, value, onSelectLocal, showHotDogs, classNa
           return;
         }
 
-        router.push(`/trips/${slug}?view=${next}`);
+        router.push(`/trips/${slug}/details?view=${next}`);
       }}
       className={className}
     >

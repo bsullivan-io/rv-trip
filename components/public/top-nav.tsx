@@ -30,10 +30,10 @@ export function TopNav({ tripSlug }: TopNavProps) {
   const pathname = usePathname();
 
   const overviewPath = `/trips/${tripSlug}/overview`;
-  const detailsPath = `/trips/${tripSlug}`;
+  const detailsPath = `/trips/${tripSlug}/details`;
 
   const overviewActive = pathname.startsWith(overviewPath);
-  const detailsActive = !overviewActive && pathname.startsWith(detailsPath);
+  const detailsActive = pathname.startsWith(detailsPath);
 
   if (!tripSlug) return null;
 

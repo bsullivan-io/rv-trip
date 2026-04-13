@@ -39,7 +39,7 @@ export default async function TripLocationsPage({ params }: TripLocationsPagePro
     <main className="locations-page">
       <section className="panel section-card stack">
         <div className="inline-actions">
-          <Link href={`/trips/${trip.slug}`} className="button-secondary">
+          <Link href={`/trips/${trip.slug}/details`} className="button-secondary">
             Back to trip
           </Link>
         </div>

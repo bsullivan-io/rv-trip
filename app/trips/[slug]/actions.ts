@@ -15,7 +15,7 @@ import { slugify, toOptionalString, toRequiredString } from "@/lib/utils";
 
 function buildTripRedirect(slug: string, params: Record<string, string>) {
   const search = new URLSearchParams(params);
-  return `/trips/${slug}${search.toString() ? `?${search.toString()}` : ""}`;
+  return `/trips/${slug}/details${search.toString() ? `?${search.toString()}` : ""}`;
 }
 
 function buildTrackerRedirect(slug: string, params: Record<string, string> = {}) {

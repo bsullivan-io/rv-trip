@@ -36,7 +36,7 @@ export default async function AdminTripPage({ params }: AdminTripPageProps) {
   return (
     <section className="stack">
       <div className="inline-actions">
-        <Link href={`/trips/${trip.slug}`} className="button-secondary">
+        <Link href={`/trips/${trip.slug}/details`} className="button-secondary">
           Open public trip
         </Link>
         <form action={reimportSeedTripAction}>
