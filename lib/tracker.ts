@@ -2,8 +2,6 @@ import { getAdminSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const AUTO_TRACK_MIN_MILES = 0.15;
-const AUTO_TRACK_MICRO_MILES = 0.05;
-const AUTO_TRACK_RELAXED_SECONDS = 900;
 
 type Coordinates = {
   latitude: number;
@@ -143,24 +141,14 @@ export async function resolveTrackerDayId(tripId: string, recordedAt: Date) {
 }
 
 export function shouldPersistAutoPoint(
-  lastPoint: { latitude: number; longitude: number; recordedAt: Date },
-  nextPoint: { latitude: number; longitude: number; recordedAt: Date }
+  lastPoint: { latitude: number; longitude: number },
+  nextPoint: { latitude: number; longitude: number }
 ) {
   const movedMiles = distanceMiles(
     { latitude: lastPoint.latitude, longitude: lastPoint.longitude },
     { latitude: nextPoint.latitude, longitude: nextPoint.longitude }
   );
-  const elapsedSeconds = Math.max(0, Math.round((nextPoint.recordedAt.getTime() - lastPoint.recordedAt.getTime()) / 1000));
-
-  if (movedMiles < AUTO_TRACK_MICRO_MILES) {
-    return false;
-  }
-
-  if (movedMiles < AUTO_TRACK_MIN_MILES && elapsedSeconds < AUTO_TRACK_RELAXED_SECONDS) {
-    return false;
-  }
-
-  return true;
+  return movedMiles >= AUTO_TRACK_MIN_MILES;
 }
 
 export async function persistTrackerPoint(input: {

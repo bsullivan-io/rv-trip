@@ -38,6 +38,10 @@ export function AdminTrackerClient({ enabled }: AdminTrackerClientProps) {
         if (now - lastSentAtRef.current < 30000) {
           return;
         }
+        // Skip low-accuracy fixes (WiFi/cell positioning can jump hundreds of meters)
+        if (position.coords.accuracy > 65) {
+          return;
+        }
 
         lastSentAtRef.current = now;
 
