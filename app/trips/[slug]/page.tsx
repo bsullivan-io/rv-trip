@@ -67,6 +67,7 @@ export default async function TripPage({ params, searchParams }: TripPageProps) 
           recordedAt: point.recordedAt.toISOString(),
           source: point.source,
           note: point.note,
+          author: point.author ?? null,
           cityName: point.cityName,
           stateCode: point.stateCode,
           stateName: point.stateName
@@ -114,6 +115,7 @@ export default async function TripPage({ params, searchParams }: TripPageProps) 
             id: post.id,
             title: post.title,
             body: post.body,
+            author: post.author ?? null,
             createdAt: post.createdAt.toISOString(),
             media: post.media.map((media) => ({
               id: media.id,

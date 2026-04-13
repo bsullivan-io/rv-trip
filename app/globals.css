@@ -154,6 +154,28 @@ textarea {
   margin-bottom: 4px;
 }
 
+.tracker-checkin-hotdog-icon {
+  height: 32px;
+  width: auto;
+  image-rendering: pixelated;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.day-post-author {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 2px 0 4px;
+}
+
+.toolbar-author-select {
+  font-size: 0.875rem;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
 .panel {
   border: 1px solid var(--line);
   background: var(--panel);

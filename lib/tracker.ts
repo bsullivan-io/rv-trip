@@ -169,6 +169,7 @@ export async function persistTrackerPoint(input: {
   longitude: number;
   source: "auto" | "checkin";
   note?: string | null;
+  author?: string | null;
   recordedAt?: Date;
 }) {
   const trip = await prisma.trip.findUnique({
@@ -221,6 +222,7 @@ export async function persistTrackerPoint(input: {
       recordedAt,
       source: input.source,
       note: input.note?.trim() || null,
+      author: input.author?.trim() || null,
       cityName: location.cityName,
       stateCode: location.stateCode,
       stateName: location.stateName,

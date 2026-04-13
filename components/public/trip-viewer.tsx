@@ -46,6 +46,7 @@ type TripPost = {
   id: string;
   title: string;
   body: string;
+  author: string | null;
   createdAt: string;
   media: TripPostMedia[];
 };
@@ -58,6 +59,7 @@ type TripTrackerPoint = {
   recordedAt: string;
   source: "auto" | "checkin";
   note: string | null;
+  author: string | null;
   cityName: string | null;
   stateCode: string | null;
   stateName: string | null;
@@ -640,7 +642,7 @@ export function TripViewer({
     locations: day.locations.length ? day.locations : [{ id: `${day.id}-fallback-location`, sortOrder: 1, note: null, place: day.endPlace }]
   }));
   const progress = deriveTripProgress(normalizedDays, initialSelectedDayNumber || null);
-  const { isUnlocked, showHotDogs, setShowHotDogs } = useEditMode();
+  const { isUnlocked, showHotDogs, setShowHotDogs, author, setAuthor } = useEditMode();
   const [selectedDayNumber, setSelectedDayNumber] = useState(progress.selectedDayNumber);
   const [viewMode, setViewMode] = useState<"map" | "calendar" | "locations" | "hotdogs" | "tracker">(initialViewMode);
   const [trackerCenter, setTrackerCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -904,7 +906,8 @@ export function TripViewer({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
           source: "checkin",
-          note: checkInNote.trim() || null
+          note: checkInNote.trim() || null,
+          author: author || null
         })
       });
 
@@ -1161,6 +1164,19 @@ export function TripViewer({
               <input type="checkbox" checked={showHotDogs} onChange={(e) => setShowHotDogs(e.target.checked)} />
               Show Hot Dogs
             </label>
+            <div className="toolbar-toggle">
+              <label htmlFor="post-as-select">Post as</label>
+              <select
+                id="post-as-select"
+                className="toolbar-author-select"
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+              >
+                <option value="">— select —</option>
+                <option value="Brian">Brian</option>
+                <option value="Mark">Mark</option>
+              </select>
+            </div>
           </div> : null}
           {flash ? <p className={flash.type === "error" ? "form-error toolbar-flash" : "form-success toolbar-flash"}>{flash.message}</p> : null}
           {trackerFlash ? <p className={trackerFlash.type === "error" ? "form-error toolbar-flash" : "form-success toolbar-flash"}>{trackerFlash.message}</p> : null}
@@ -1314,6 +1330,7 @@ export function TripViewer({
                     <input type="hidden" name="slug" value={trip.slug} />
                     <input type="hidden" name="dayId" value={selectedDay.id} />
                     <input type="hidden" name="selectedDayNumber" value={selectedDay.dayNumber} />
+                    <input type="hidden" name="author" value={author} />
                     <input className="tracker-inline-input" name="title" placeholder="Post title" />
                     <textarea className="tracker-inline-input tracker-inline-textarea" name="body" rows={3} placeholder="Write the post..." />
                     <button className="button-secondary tracker-inline-save" type="submit">
@@ -1339,6 +1356,19 @@ export function TripViewer({
                             <span>{formatShortDate(post.createdAt)}</span>
                             <span>{formatTrackerTime(post.createdAt)}</span>
                           </div>
+                          {post.author ? <span className="day-post-author">by {post.author}</span> : null}
+                          {editable ? (
+                            <InlineEditableText
+                              canEdit={editable}
+                              label="post author"
+                              value={post.author ?? ""}
+                              action={updatePostAction}
+                              hiddenFields={{ slug: trip.slug, postId: post.id, selectedDayNumber: selectedDay.dayNumber }}
+                              field="author"
+                              className="day-post-author-edit"
+                              placeholder="No author."
+                            />
+                          ) : null}
                           {editable ? (
                             <DeleteInlineButton
                               action={deletePostAction}
@@ -1584,10 +1614,14 @@ export function TripViewer({
                     <ul className="day-stop-cards">
                       {selectedDayCheckIns.map((item) => (
                         <li key={item.id} className="day-stop-card">
+                          {item.note && (item.note.toLowerCase().includes("hot dog") || item.note.toLowerCase().includes("hotdog"))
+                            ? <img src="/hot_dog.png" alt="" aria-hidden className="tracker-checkin-hotdog-icon" />
+                            : <img src="/rv.png" alt="" aria-hidden className="tracker-checkin-rv-icon" />}
                           <div className="tracker-checkin-meta">
                             <strong>{resolveTrackerPointLabel(item, trackerCandidates)}</strong>
                             <span>{formatTrackerTime(item.recordedAt)}</span>
                           </div>
+                          {item.author ? <p className="day-post-author">by {item.author}</p> : null}
                           {item.note ? <p className="day-stop-note">{item.note}</p> : null}
                           <div className="day-stop-distance-row">
                             {item.stateName ? <span className="chip">{item.stateName}</span> : null}

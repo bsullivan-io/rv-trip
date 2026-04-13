@@ -13,6 +13,7 @@ export async function POST(request: Request) {
       longitude?: number;
       source?: "auto" | "checkin";
       note?: string | null;
+      author?: string | null;
     };
 
     if (!body.tripSlug || typeof body.latitude !== "number" || typeof body.longitude !== "number") {
@@ -24,7 +25,8 @@ export async function POST(request: Request) {
       latitude: body.latitude,
       longitude: body.longitude,
       source: body.source === "checkin" ? "checkin" : "auto",
-      note: body.note ?? null
+      note: body.note ?? null,
+      author: body.author ?? null
     });
 
     if (result.stored) {

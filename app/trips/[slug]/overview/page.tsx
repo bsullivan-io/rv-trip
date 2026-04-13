@@ -303,14 +303,10 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                     <li key={`point-${point.id}`} className="day-stop-card tracker-point-item">
                       <div className="tracker-point-header">
                         <div className="tracker-point-header-main">
-                          {point.source === "checkin" && (
-                            <img
-                              src={point.note && (point.note.toLowerCase().includes("hot dog") || point.note.toLowerCase().includes("hotdog")) ? "/hot_dog.png" : "/rv.png"}
-                              alt=""
-                              aria-hidden
-                              className="tracker-checkin-rv-icon"
-                            />
-                          )}
+                          {point.source === "checkin" && (() => {
+                            const isHotDog = point.note ? point.note.toLowerCase().includes("hot dog") || point.note.toLowerCase().includes("hotdog") : false;
+                            return <img src={isHotDog ? "/hot_dog.png" : "/rv.png"} alt="" aria-hidden className={isHotDog ? "tracker-checkin-hotdog-icon" : "tracker-checkin-rv-icon"} />;
+                          })()}
                           <strong>{resolveTrackerPointLabel(point, trackerCandidates)}</strong>
                           <span>{formatPointTimestamp(point.recordedAt, entry.timezone)}</span>
                         </div>
@@ -325,8 +321,9 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                         </EditModeGate>
                       </div>
                       <p className="tracker-point-meta">
-                        {entry.day ? `Day ${entry.day.dayNumber} · ${entry.day.title}` : "Unassigned"} · {point.stateName ?? "State unavailable"} · {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
+                        {entry.day ? `Day ${entry.day.dayNumber}` : "Unassigned"} · {point.stateName ?? "State unavailable"} · {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
                       </p>
+                      {point.author ? <p className="day-post-author">by {point.author}</p> : null}
                       <EditModeGate
                         enabled={Boolean(adminSession)}
                         fallback={point.note ? <p className="tracker-point-note">{point.note}</p> : null}
@@ -341,6 +338,20 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                             defaultValue={point.note ?? ""}
                             placeholder="Check-in text"
                             rows={2}
+                          />
+                          <button className="button-secondary tracker-inline-save" type="submit">
+                            Save
+                          </button>
+                        </form>
+                        <form action={updateTrackerPointAction} className="tracker-inline-form">
+                          <input type="hidden" name="slug" value={trip.slug} />
+                          <input type="hidden" name="pointId" value={point.id} />
+                          <input type="hidden" name="field" value="author" />
+                          <input
+                            className="tracker-inline-input"
+                            name="value"
+                            defaultValue={point.author ?? ""}
+                            placeholder="Author (Brian / Mark)"
                           />
                           <button className="button-secondary tracker-inline-save" type="submit">
                             Save
@@ -374,7 +385,8 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                       </EditModeGate>
                     </div>
                     <p className="tracker-point-meta">
-                      {day ? `Day ${day.dayNumber} · ${day.title}` : "Day unavailable"}
+                      {day ? `Day ${day.dayNumber}` : ""}
+                      {post.author ? ` · by ${post.author}` : ""}
                     </p>
                     <EditModeGate
                       enabled={Boolean(adminSession)}
@@ -396,6 +408,16 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                           <input type="hidden" name="returnTo" value="overview" />
                           <input type="hidden" name="field" value="body" />
                           <textarea className="tracker-inline-input tracker-inline-textarea" name="value" defaultValue={post.body} rows={3} />
+                          <button className="button-secondary tracker-inline-save" type="submit">
+                            Save
+                          </button>
+                        </form>
+                        <form action={updateTripPostAction} className="tracker-inline-form">
+                          <input type="hidden" name="slug" value={trip.slug} />
+                          <input type="hidden" name="postId" value={post.id} />
+                          <input type="hidden" name="returnTo" value="overview" />
+                          <input type="hidden" name="field" value="author" />
+                          <input className="tracker-inline-input" name="value" defaultValue={post.author ?? ""} placeholder="Author (Brian / Mark)" />
                           <button className="button-secondary tracker-inline-save" type="submit">
                             Save
                           </button>

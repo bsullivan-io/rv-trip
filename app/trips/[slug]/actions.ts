@@ -897,14 +897,14 @@ export async function updateTrackerPointAction(formData: FormData) {
   const field = toRequiredString(formData.get("field"), "Field");
   const value = toOptionalString(formData.get("value"));
 
-  if (field !== "note") {
+  if (field !== "note" && field !== "author") {
     throw new Error("Unsupported tracker point field.");
   }
 
   await prisma.tripTrackPoint.update({
     where: { id: pointId },
     data: {
-      note: value
+      [field]: value || null
     }
   });
 
@@ -934,6 +934,7 @@ export async function createTripPostAction(formData: FormData) {
   const selectedDayNumber = String(formData.get("selectedDayNumber") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
+  const author = String(formData.get("author") ?? "").trim() || null;
   const returnTo = String(formData.get("returnTo") ?? "").trim();
 
   if (!title || !body) {
@@ -944,7 +945,8 @@ export async function createTripPostAction(formData: FormData) {
     data: {
       tripDayId: dayId,
       title,
-      body
+      body,
+      author
     }
   });
 
@@ -965,7 +967,7 @@ export async function updateTripPostAction(formData: FormData) {
   const selectedDayNumber = String(formData.get("selectedDayNumber") ?? "").trim();
   const returnTo = String(formData.get("returnTo") ?? "").trim();
 
-  if (!["title", "body"].includes(field)) {
+  if (!["title", "body", "author"].includes(field)) {
     throw new Error("Unsupported post field.");
   }
 

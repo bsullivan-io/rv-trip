@@ -6,12 +6,15 @@ import { faLock, faLockOpen } from "@fortawesome/free-solid-svg-icons";
 
 const STORAGE_KEY = "make-a-mile-edit-unlocked";
 const HOTDOGS_KEY = "make-a-mile-show-hotdogs";
+const AUTHOR_KEY = "make-a-mile-post-author";
 
 type EditModeContextValue = {
   isUnlocked: boolean;
   setIsUnlocked: (value: boolean) => void;
   showHotDogs: boolean;
   setShowHotDogs: (value: boolean) => void;
+  author: string;
+  setAuthor: (value: string) => void;
 };
 
 const EditModeContext = createContext<EditModeContextValue | null>(null);
@@ -19,10 +22,13 @@ const EditModeContext = createContext<EditModeContextValue | null>(null);
 export function EditModeProvider({ children }: { children: ReactNode }) {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showHotDogs, setShowHotDogs] = useState(false);
+  const [author, setAuthor] = useState("");
 
   useEffect(() => {
     if (window.localStorage.getItem(STORAGE_KEY) === "true") setIsUnlocked(true);
     if (window.localStorage.getItem(HOTDOGS_KEY) === "true") setShowHotDogs(true);
+    const savedAuthor = window.localStorage.getItem(AUTHOR_KEY);
+    if (savedAuthor) setAuthor(savedAuthor);
   }, []);
 
   useEffect(() => {
@@ -37,7 +43,11 @@ export function EditModeProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(HOTDOGS_KEY, showHotDogs ? "true" : "false");
   }, [showHotDogs]);
 
-  const value = useMemo(() => ({ isUnlocked, setIsUnlocked, showHotDogs, setShowHotDogs }), [isUnlocked, showHotDogs]);
+  useEffect(() => {
+    window.localStorage.setItem(AUTHOR_KEY, author);
+  }, [author]);
+
+  const value = useMemo(() => ({ isUnlocked, setIsUnlocked, showHotDogs, setShowHotDogs, author, setAuthor }), [isUnlocked, showHotDogs, author]);
 
   return <EditModeContext.Provider value={value}>{children}</EditModeContext.Provider>;
 }

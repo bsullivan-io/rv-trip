@@ -133,6 +133,7 @@ model TripPost {
   tripDayId String
   title     String
   body      String          @db.Text
+  author    String?
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
   tripDay   TripDay         @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
@@ -212,6 +213,7 @@ model TripTrackPoint {
   recordedAt    DateTime
   source        TripTrackSource
   note          String?
+  author        String?
   cityName      String?
   stateCode     String?
   stateName     String?
