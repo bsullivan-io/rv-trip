@@ -48,6 +48,7 @@ type TripMapProps = {
   selectedDayNumber: number;
   currentDayNumber: number;
   onSelectDay: (dayNumber: number) => void;
+  canEdit?: boolean;
 };
 
 function getDayRoutePlaces(day: MapDay) {
@@ -153,7 +154,7 @@ function getHotDogIcon(zoom?: number) {
   };
 }
 
-export function TripMap({ days, hotDogPlaces, selectedDayNumber, currentDayNumber, onSelectDay }: TripMapProps) {
+export function TripMap({ days, hotDogPlaces, selectedDayNumber, currentDayNumber, onSelectDay, canEdit }: TripMapProps) {
   const containerId = useId().replace(/:/g, "");
   const mapRef = useRef<HTMLDivElement | null>(null);
   const [livePosition, setLivePosition] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -161,7 +162,7 @@ export function TripMap({ days, hotDogPlaces, selectedDayNumber, currentDayNumbe
   const instanceRef = useRef<MapInstance | null>(null);
 
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!canEdit || !navigator.geolocation) return;
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
@@ -172,7 +173,7 @@ export function TripMap({ days, hotDogPlaces, selectedDayNumber, currentDayNumbe
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
+  }, [canEdit]);
 
   useEffect(() => {
     let mounted = true;

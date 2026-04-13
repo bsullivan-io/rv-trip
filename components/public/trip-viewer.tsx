@@ -326,7 +326,8 @@ function CalendarView({
   showMonthNavigation: boolean;
   variant: "compact" | "full";
 }) {
-  const weeks = buildCalendarWeeks(monthIso, days, events);
+  const allWeeks = buildCalendarWeeks(monthIso, days, events);
+  const weeks = variant === "full" ? allWeeks.filter((week) => week.cells.some((cell) => cell.tripDay)) : allWeeks;
 
   return (
     <section className={variant === "full" ? "trip-calendar trip-calendar-full" : "trip-calendar"}>
@@ -958,15 +959,6 @@ export function TripViewer({
           <FontAwesomeIcon icon={faAnglesLeft} />
         </button>
         <section className="trip-header">
-          <p className="eyebrow">Trip Overview</p>
-          <div className="trip-status-banner">
-            <strong>{progress.label}</strong>
-            {progress.state === "active" && selectedDay.dayNumber !== progress.currentDayNumber ? (
-              <span>Today is Day {progress.currentDayNumber}.</span>
-            ) : progress.state === "upcoming" && trip.startDate ? (
-              <span>Starts {formatShortDate(trip.startDate)}.</span>
-            ) : null}
-          </div>
           <InlineEditableText canEdit={editable} label="title" value={trip.title} action={updateTripAction} hiddenFields={tripHidden} field="title" className="trip-heading-edit" />
           <InlineEditableText
             canEdit={editable}
@@ -978,17 +970,33 @@ export function TripViewer({
             multiline
             className="trip-summary"
           />
+          <div className="trip-status-banner">
+            {progress.state === "active" ? (
+              <>
+                <strong>Trip happening now!</strong>
+                {(() => {
+                  const latest = [...trackerPoints].reverse().find((p) => p.source === "checkin");
+                  return latest?.cityName ? (
+                    <span>{latest.cityName}{latest.stateCode ? `, ${latest.stateCode}` : ""}</span>
+                  ) : null;
+                })()}
+              </>
+            ) : (
+              <>
+                <strong>{progress.label}</strong>
+                {progress.state === "active" && selectedDay.dayNumber !== progress.currentDayNumber ? (
+                  <span>Today is Day {progress.currentDayNumber}.</span>
+                ) : progress.state === "upcoming" && trip.startDate ? (
+                  <span>Starts {formatShortDate(trip.startDate)}.</span>
+                ) : null}
+              </>
+            )}
+          </div>
           <div className="chip-row">
             {trip.totalMiles ? <span className="chip">{trip.totalMiles} miles</span> : null}
             <span className="chip">{trip.days.length} days</span>
             <span className="chip">{totalActivities} activities</span>
             {trip.startDate && trip.endDate ? <span className="chip">{formatShortDate(trip.startDate)} to {formatShortDate(trip.endDate)}</span> : null}
-            <Link className="chip chip-link" href={`/trips/${trip.slug}/summary`}>
-              Trip Summary
-            </Link>
-            <Link className="chip chip-link" href={`/trips/${trip.slug}/tracker`}>
-              Trip Tracker
-            </Link>
             {canEdit ? (
               <Link className="chip chip-link" href={`/trips/${trip.slug}/batch-activities`}>
                 Batch Add Activities
@@ -1040,6 +1048,9 @@ export function TripViewer({
             ))}
           </section>
         )}
+        <div className="sidebar-summary-link">
+          <Link href={`/trips/${trip.slug}/summary`}>Trip Summary</Link>
+        </div>
       </aside>
 
       <section
@@ -1177,6 +1188,7 @@ export function TripViewer({
                   selectedDayNumber={selectedDay.dayNumber}
                   currentDayNumber={progress.currentDayNumber ?? selectedDay.dayNumber}
                   onSelectDay={selectDay}
+                  canEdit={canEdit}
                 />
                 <div className="trip-legend">
                   <span>

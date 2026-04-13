@@ -378,6 +378,11 @@ textarea {
   flex: 1 1 0;
 }
 
+.sidebar-summary-link {
+  padding: 12px 20px 20px;
+  font-size: 0.82rem;
+}
+
 .trip-calendar-header {
   display: flex;
   justify-content: space-between;
