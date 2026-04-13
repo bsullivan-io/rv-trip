@@ -1060,12 +1060,6 @@ export function TripViewer({
               : "panel trip-main"
         }
       >
-        <div className="phone-summary-trigger mobile-only">
-          <button className="button-secondary" type="button" onClick={() => setPhoneSidebarOpen(true)}>
-            Trip Overview
-          </button>
-          <span className="phone-summary-day-label">Day {selectedDay.dayNumber}</span>
-        </div>
         <div
           className={
             viewMode === "calendar"
@@ -1089,25 +1083,12 @@ export function TripViewer({
               setViewMode(next);
             }}
             showHotDogs={showHotDogs}
-            className="desktop-only trip-stage-tabs-wrap"
+            className="trip-stage-tabs-wrap"
           />
-            <div className="phone-stage-selector mobile-only">
-              <select
-                aria-label="View mode"
-                className="toolbar-add-stop-kind"
-                value={viewMode}
-                onChange={(event) => setViewMode(event.target.value as typeof viewMode)}
-              >
-                <option value="map">Map</option>
-                <option value="calendar">Calendar</option>
-                <option value="locations">Locations</option>
-                <option value="hotdogs">Hot Dogs</option>
-              </select>
-              <Link className="button-secondary phone-tracker-link" href={`/trips/${trip.slug}/overview`}>
-                Tracker
-              </Link>
-            </div>
             <div className="day-stepper day-stepper-toolbar">
+              <button className="button-secondary phone-menu-btn" type="button" onClick={() => setPhoneSidebarOpen(true)}>
+                Menu
+              </button>
               <button className="button-secondary" type="button" disabled={!previousDay} onClick={() => previousDay && selectDay(previousDay.dayNumber)}>
                 Previous Day
               </button>

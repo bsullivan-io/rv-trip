@@ -33,18 +33,19 @@ export default async function RootLayout({
             as="header"
             className="site-header"
             direction={{ base: "column", md: "row" }}
-            align={{ base: "flex-start", md: "center" }}
+            align={{ base: "flex-start", md: "flex-end" }}
             justify="space-between"
             gap={4}
             px={{ base: 4, md: 5 }}
-            py={{ base: 4, md: 5 }}
+            pt={{ base: 4, md: 5 }}
+            pb={0}
             mb={4}
             borderColor="brand.600"
             borderTopWidth="4px"
             bg="white"
             boxShadow="lg"
           >
-            <Box className="site-header-inner" maxW="92rem" mx="auto" w="100%" display="flex" alignItems="center" justifyContent="space-between" gap={4} flexWrap="wrap">
+            <Box className="site-header-inner" maxW="92rem" mx="auto" w="100%" display="flex" alignItems={{ base: "center", md: "flex-end" }} justifyContent={{ base: "center", md: "space-between" }} gap={4} flexWrap="wrap">
               <Link className="brand" as={NextLink} href="/" _hover={{ textDecoration: "none", color: "brand.600" }}>
                 <Image className="brand-logo" src="/logo.png" alt="Make a Mile" width={220} height={52} priority />
               </Link>
