@@ -321,7 +321,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                         </EditModeGate>
                       </div>
                       <p className="tracker-point-meta">
-                        {entry.day ? `Day ${entry.day.dayNumber}` : "Unassigned"} · {point.stateName ?? "State unavailable"} · {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
+                        {entry.day ? `Day ${entry.day.dayNumber}` : "Unassigned"} · {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
                       </p>
                       {point.author ? <p className="day-post-author">by {point.author}</p> : null}
                       <EditModeGate
