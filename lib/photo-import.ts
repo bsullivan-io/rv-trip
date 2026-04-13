@@ -16,6 +16,7 @@ type TripDayMatch = {
     };
   }>;
   endPlace: {
+    name: string;
     latitude: number;
     longitude: number;
   };
@@ -117,12 +118,12 @@ export function matchPhotoToDay(days: TripDayMatch[], metadata: PhotoMetadata, s
   return candidates[0] ?? days.find((day) => day.dayNumber === selectedDayNumber) ?? days[0];
 }
 
-export async function saveUploadedPhoto(file: File) {
+export async function saveUploadedMedia(file: File, directory = "trip-photos") {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
   const extension = path.extname(file.name) || ".jpg";
   const filename = `${randomUUID()}${extension.toLowerCase()}`;
-  const relativePath = path.join("uploads", "trip-photos", filename);
+  const relativePath = path.join("uploads", directory, filename);
   const outputPath = path.join(process.cwd(), "public", relativePath);
 
   await mkdir(path.dirname(outputPath), { recursive: true });
@@ -132,6 +133,10 @@ export async function saveUploadedPhoto(file: File) {
     buffer,
     relativePath: `/${relativePath.replace(/\\/g, "/")}`
   };
+}
+
+export async function saveUploadedPhoto(file: File) {
+  return saveUploadedMedia(file, "trip-photos");
 }
 
 export async function deleteUploadedPhoto(filePath: string) {

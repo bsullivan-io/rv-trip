@@ -35,9 +35,6 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
             <Heading size="2xl" mb={3}>
               Sign in to edit trips
             </Heading>
-            <Text color="muted" fontSize="sm">
-              Use the single admin account configured via environment variables and seeded into Postgres.
-            </Text>
           </Box>
 
           <form action={loginAction}>

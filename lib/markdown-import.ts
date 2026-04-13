@@ -182,14 +182,14 @@ function parseNotes(notesSection: string) {
 }
 
 export async function readSeedMarkdown() {
-  const filePath = path.join(process.cwd(), "data", "marcellus-trip.md");
+  const filePath = path.join(process.cwd(), "data", "mark-brian-april-2026.md");
   return readFile(filePath, "utf8");
 }
 
 export async function importSeedTrip(markdown?: string) {
   const source = markdown ?? (await readSeedMarkdown());
   const title = source.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? "Trip Itinerary";
-  const tripSlug = slugify(title) || "trip-itinerary";
+  const tripSlug = "mark-brian-april-2026";
   const startingLocation = source.match(/^Starting location:\s*(.+)$/m)?.[1]?.trim() ?? "Marcellus, NY, USA";
   const introParagraphs = source.split("\n\n");
   const summary = introParagraphs[2]?.trim() ?? "RV trip itinerary";

@@ -79,6 +79,24 @@ function pointsEqual(left: RoutePlace, right: RoutePlace) {
   return left.latitude === right.latitude && left.longitude === right.longitude;
 }
 
+function buildDayTitle(day: Pick<RouteTripDay, "startPlace" | "endPlace" | "locations">) {
+  const locationNames = day.locations
+    .slice()
+    .sort((left, right) => left.sortOrder - right.sortOrder)
+    .map((location) => location.place.name.trim())
+    .filter(Boolean);
+
+  const normalizedNames = locationNames.length
+    ? locationNames.filter((name, index, values) => index === 0 || name !== values[index - 1])
+    : [day.startPlace.name, day.endPlace.name].filter(Boolean);
+
+  if (!normalizedNames.length) {
+    return `${day.startPlace.name} -> ${day.endPlace.name}`;
+  }
+
+  return normalizedNames.join(" -> ");
+}
+
 async function computeRoute(origin: RoutePlace, stops: RoutePlace[]) {
   const apiKey = getApiKey();
   if (!apiKey) {
@@ -436,6 +454,7 @@ export async function recomputeTripRoutes(tripId: string) {
       await prisma.tripDay.update({
         where: { id: day.id },
         data: {
+          title: buildDayTitle(day),
           miles: computed.miles,
           distanceMeters: computed.distanceMeters,
           durationSeconds: computed.durationSeconds,
@@ -445,6 +464,12 @@ export async function recomputeTripRoutes(tripId: string) {
       });
       totalMiles += computed.miles;
     } else {
+      await prisma.tripDay.update({
+        where: { id: day.id },
+        data: {
+          title: buildDayTitle(day)
+        }
+      });
       totalMiles += day.miles;
     }
 

@@ -4,11 +4,14 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronLeft, faChevronRight, faLock, faLockOpen, faShareNodes, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faAnglesLeft, faExpand, faShareNodes, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { TripMap } from "@/components/public/trip-map";
+import { TripStageTabs } from "@/components/public/trip-stage-tabs";
+import { useEditMode } from "@/components/ui/edit-mode";
 import { formatDateLabel, formatMonthLabel, formatShortDate } from "@/lib/dates";
 import { buildPlaceLookupUrl, buildStopSearchUrl } from "@/lib/map-links";
 import { deriveTripProgress } from "@/lib/trip-progress";
+import { resolveTrackerPointLabel } from "@/lib/tracker-labels";
 import { addUtcDays, compareDateKeys, deriveStayEvents, parseUtcDateKey, toDateKey, type StayEvent } from "@/lib/trip-stays";
 
 type Place = {
@@ -25,12 +28,39 @@ type DayLocation = {
   place: Place;
 };
 
-type TripPhoto = {
+type TripMedia = {
   id: string;
   filePath: string;
   originalFilename: string;
+  title: string | null;
+  caption: string | null;
   mimeType: string | null;
   capturedAt: string | null;
+};
+
+type TripPhoto = TripMedia;
+
+type TripPostMedia = TripMedia;
+
+type TripPost = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  media: TripPostMedia[];
+};
+
+type TripTrackerPoint = {
+  id: string;
+  tripDayId: string | null;
+  latitude: number;
+  longitude: number;
+  recordedAt: string;
+  source: "auto" | "checkin";
+  note: string | null;
+  cityName: string | null;
+  stateCode: string | null;
+  stateName: string | null;
 };
 
 type TripDay = {
@@ -51,6 +81,7 @@ type TripDay = {
   endPlace: Place;
   locations: DayLocation[];
   photos: TripPhoto[];
+  posts: TripPost[];
   stops: Array<{
     id: string;
     kind: "dinner" | "activity";
@@ -82,6 +113,7 @@ type TripViewerProps = {
     notes: string;
     startDate: string | null;
     endDate: string | null;
+    trackPoints: TripTrackerPoint[];
     hotDogPlaces: Array<{
       id: string;
       name: string;
@@ -97,15 +129,23 @@ type TripViewerProps = {
     message: string;
   } | null;
   initialSelectedDayNumber: number;
+  initialViewMode: "map" | "calendar" | "locations" | "hotdogs";
   canEdit: boolean;
   loginUrl: string;
   addStopAction: (formData: FormData) => Promise<void>;
   addPlaceSearchAction: (formData: FormData) => Promise<void>;
   uploadTripPhotoAction: (formData: FormData) => Promise<void>;
+  createPostAction: (formData: FormData) => Promise<void>;
+  updatePostAction: (formData: FormData) => Promise<void>;
+  deletePostAction: (formData: FormData) => Promise<void>;
+  uploadPostMediaAction: (formData: FormData) => Promise<void>;
+  updatePostMediaAction: (formData: FormData) => Promise<void>;
+  deletePostMediaAction: (formData: FormData) => Promise<void>;
   updateTripAction: (formData: FormData) => Promise<void>;
   updateDayAction: (formData: FormData) => Promise<void>;
   updateLocationAction: (formData: FormData) => Promise<void>;
   updateStopAction: (formData: FormData) => Promise<void>;
+  updatePhotoAction: (formData: FormData) => Promise<void>;
   deleteLocationAction: (formData: FormData) => Promise<void>;
   deleteStopAction: (formData: FormData) => Promise<void>;
   deletePhotoAction: (formData: FormData) => Promise<void>;
@@ -170,6 +210,17 @@ function formatDistanceLabel(miles: number | null | undefined) {
     return "Unavailable";
   }
   return `${miles} mi`;
+}
+
+function formatTrackerTime(date: string | null) {
+  if (!date) {
+    return "Time unavailable";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(new Date(date));
 }
 
 function isVideoMedia(photo: TripPhoto) {
@@ -461,17 +512,25 @@ function DeleteInlineButton({
   );
 }
 
-function PhotoUploadControl() {
+function MediaUploadControl({
+  inputName = "photo",
+  hint = "Choose a photo or video to upload immediately.",
+  multiple = false
+}: {
+  inputName?: string;
+  hint?: string;
+  multiple?: boolean;
+}) {
   const { pending } = useFormStatus();
 
   return (
     <div className="photo-upload-control">
       <input
         type="file"
-        name="photo"
+        name={inputName}
         accept="image/*,video/*"
-        capture="environment"
         required
+        multiple={multiple}
         disabled={pending}
         onChange={(event) => {
           if (event.currentTarget.files?.length) {
@@ -479,7 +538,7 @@ function PhotoUploadControl() {
           }
         }}
       />
-      <span className="muted photo-upload-hint">{pending ? "Uploading..." : "Choose a photo or video to upload immediately."}</span>
+      <span className="muted photo-upload-hint">{pending ? "Uploading..." : hint}</span>
     </div>
   );
 }
@@ -555,15 +614,23 @@ export function TripViewer({
   trip,
   flash,
   initialSelectedDayNumber,
+  initialViewMode,
   canEdit,
   loginUrl,
   addStopAction,
   addPlaceSearchAction,
   uploadTripPhotoAction,
+  createPostAction,
+  updatePostAction,
+  deletePostAction,
+  uploadPostMediaAction,
+  updatePostMediaAction,
+  deletePostMediaAction,
   updateTripAction,
   updateDayAction,
   updateLocationAction,
   updateStopAction,
+  updatePhotoAction,
   deleteLocationAction,
   deleteStopAction,
   deletePhotoAction
@@ -573,11 +640,11 @@ export function TripViewer({
     locations: day.locations.length ? day.locations : [{ id: `${day.id}-fallback-location`, sortOrder: 1, note: null, place: day.endPlace }]
   }));
   const progress = deriveTripProgress(normalizedDays, initialSelectedDayNumber || null);
+  const { isUnlocked } = useEditMode();
   const [selectedDayNumber, setSelectedDayNumber] = useState(progress.selectedDayNumber);
-  const [viewMode, setViewMode] = useState<"map" | "calendar" | "locations" | "hotdogs">("map");
+  const [viewMode, setViewMode] = useState<"map" | "calendar" | "locations" | "hotdogs">(initialViewMode);
   const [mapExpanded, setMapExpanded] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState<TripPhoto | null>(null);
-  const [editMode, setEditMode] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<TripMedia | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [phoneSidebarOpen, setPhoneSidebarOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<"days" | "calendar">("days");
@@ -585,9 +652,13 @@ export function TripViewer({
   const [searchResults, setSearchResults] = useState<PlaceSuggestion[]>([]);
   const [selectedSuggestion, setSelectedSuggestion] = useState<PlaceSuggestion | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [trackerPoints, setTrackerPoints] = useState(trip.trackPoints);
+  const [checkInNote, setCheckInNote] = useState("");
+  const [checkInPending, setCheckInPending] = useState(false);
+  const [trackerFlash, setTrackerFlash] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const selectedDay = normalizedDays.find((day) => day.dayNumber === selectedDayNumber) ?? normalizedDays[0];
-  const editable = canEdit && editMode;
+  const editable = canEdit && isUnlocked;
   const stayEvents = deriveStayEvents(
     normalizedDays.map((day) => ({
       dayNumber: day.dayNumber,
@@ -615,13 +686,13 @@ export function TripViewer({
   }, [mapExpanded]);
 
   useEffect(() => {
-    if (!selectedPhoto) return;
+    if (!selectedMedia) return;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setSelectedPhoto(null);
+      if (event.key === "Escape") setSelectedMedia(null);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedPhoto]);
+  }, [selectedMedia]);
 
   useEffect(() => {
     if (!searchQuery.trim() || searchQuery.includes("://")) {
@@ -696,7 +767,7 @@ export function TripViewer({
     await addPlaceSearchAction(formData);
   }
 
-  async function handleSharePhoto(photo: TripPhoto) {
+  async function handleSharePhoto(photo: TripMedia) {
     const shareUrl = new URL(photo.filePath, window.location.origin).toString();
     const mimeType = photo.mimeType || (isVideoMedia(photo) ? "video/mp4" : "image/jpeg");
 
@@ -774,10 +845,87 @@ export function TripViewer({
     places: trip.hotDogPlaces.filter((place) => place.dayNumber === day.dayNumber)
   }));
   const totalActivities = normalizedDays.reduce((count, day) => count + day.stops.filter((stop) => stop.kind === "activity").length, 0);
+  const selectedDayCheckIns = trackerPoints
+    .filter((point) => point.tripDayId === selectedDay.id && (point.source === "checkin" || Boolean(point.note)))
+    .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt));
+  const trackerCandidates = [
+    ...selectedDay.locations.map((location) => ({
+      name: location.place.name,
+      latitude: location.place.latitude,
+      longitude: location.place.longitude
+    })),
+    ...selectedDay.stops
+      .filter((stop) => stop.latitude != null && stop.longitude != null)
+      .map((stop) => ({
+        name: stop.name,
+        latitude: stop.latitude as number,
+        longitude: stop.longitude as number
+      }))
+  ];
   const selectDay = (dayNumber: number) => {
     setSelectedDayNumber(dayNumber);
     setPhoneSidebarOpen(false);
   };
+
+  async function handleManualCheckIn() {
+    if (!window.isSecureContext && window.location.hostname !== "localhost") {
+      setTrackerFlash({
+        type: "error",
+        message: "Check-ins on iPhone/iPad require HTTPS when testing over your local network."
+      });
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setTrackerFlash({ type: "error", message: "Geolocation is unavailable on this device." });
+      return;
+    }
+
+    setCheckInPending(true);
+    setTrackerFlash(null);
+
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        });
+      });
+
+      const response = await fetch("/api/tracker", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          tripSlug: trip.slug,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          source: "checkin",
+          note: checkInNote.trim() || null
+        })
+      });
+
+      const payload = (await response.json()) as {
+        error?: string;
+        point?: TripTrackerPoint;
+      };
+
+      if (!response.ok || !payload.point) {
+        throw new Error(payload.error || "Could not save that check-in.");
+      }
+
+      const point = payload.point;
+      setTrackerPoints((current) => [...current, point].sort((left, right) => right.recordedAt.localeCompare(left.recordedAt)));
+      setCheckInNote("");
+      setTrackerFlash({ type: "success", message: "Check-in saved." });
+    } catch (error) {
+      setTrackerFlash({ type: "error", message: error instanceof Error ? error.message : "Could not save that check-in." });
+    } finally {
+      setCheckInPending(false);
+    }
+  }
 
   return (
     <main
@@ -807,7 +955,7 @@ export function TripViewer({
           aria-label="Collapse sidebar"
           title="Collapse sidebar"
         >
-          <FontAwesomeIcon icon={faChevronLeft} />
+          <FontAwesomeIcon icon={faAnglesLeft} />
         </button>
         <section className="trip-header">
           <p className="eyebrow">Trip Overview</p>
@@ -837,6 +985,9 @@ export function TripViewer({
             {trip.startDate && trip.endDate ? <span className="chip">{formatShortDate(trip.startDate)} to {formatShortDate(trip.endDate)}</span> : null}
             <Link className="chip chip-link" href={`/trips/${trip.slug}/summary`}>
               Trip Summary
+            </Link>
+            <Link className="chip chip-link" href={`/trips/${trip.slug}/tracker`}>
+              Trip Tracker
             </Link>
             {canEdit ? (
               <Link className="chip chip-link" href={`/trips/${trip.slug}/batch-activities`}>
@@ -916,21 +1067,7 @@ export function TripViewer({
           }
         >
           <div className="trip-stage-toolbar">
-            <div className="inline-actions trip-stage-controls desktop-only">
-              <button className={viewMode === "map" ? "button" : "button-secondary"} type="button" onClick={() => setViewMode("map")}>
-                Map
-              </button>
-              <button className={viewMode === "calendar" ? "button" : "button-secondary"} type="button" onClick={() => setViewMode("calendar")}>
-                Calendar
-              </button>
-              <button className={viewMode === "locations" ? "button" : "button-secondary"} type="button" onClick={() => setViewMode("locations")}>
-                Locations
-              </button>
-              <button className={viewMode === "hotdogs" ? "button hotdog-view-button" : "button-secondary hotdog-view-button"} type="button" onClick={() => setViewMode("hotdogs")}>
-                <img src="/hot_dog.png" alt="" aria-hidden className="hotdog-toolbar-icon" />
-                <span>Hot Dogs</span>
-              </button>
-            </div>
+            <TripStageTabs slug={trip.slug} value={viewMode} onSelectLocal={setViewMode} className="desktop-only trip-stage-tabs-wrap" />
             <div className="phone-stage-selector mobile-only">
               <select
                 aria-label="View mode"
@@ -943,19 +1080,11 @@ export function TripViewer({
                 <option value="locations">Locations</option>
                 <option value="hotdogs">Hot Dogs</option>
               </select>
+              <Link className="button-secondary phone-tracker-link" href={`/trips/${trip.slug}/tracker`}>
+                Tracker
+              </Link>
             </div>
             <div className="day-stepper day-stepper-toolbar">
-              {canEdit ? (
-                <button
-                  className={editMode ? "button icon-button" : "button-secondary icon-button"}
-                  type="button"
-                  onClick={() => setEditMode((value) => !value)}
-                  title={editMode ? "Lock editing" : "Unlock editing"}
-                  aria-label={editMode ? "Lock editing" : "Unlock editing"}
-                >
-                  <FontAwesomeIcon icon={editMode ? faLockOpen : faLock} />
-                </button>
-              ) : null}
               <button className="button-secondary" type="button" disabled={!previousDay} onClick={() => previousDay && selectDay(previousDay.dayNumber)}>
                 Previous Day
               </button>
@@ -1010,8 +1139,23 @@ export function TripViewer({
               ) : null}
               {searchError ? <p className="form-error toolbar-inline-error">{searchError}</p> : null}
             </form>
+            {canEdit ? (
+              <div className="toolbar-checkin-form">
+                <input
+                  type="text"
+                  value={checkInNote}
+                  onChange={(event) => setCheckInNote(event.target.value)}
+                  placeholder="Check-in note (optional)"
+                  className="toolbar-add-stop-url"
+                />
+                <button className="button-secondary" type="button" disabled={checkInPending} onClick={() => void handleManualCheckIn()}>
+                  {checkInPending ? "Checking in..." : "Check In"}
+                </button>
+              </div>
+            ) : null}
           </div>
           {flash ? <p className={flash.type === "error" ? "form-error toolbar-flash" : "form-success toolbar-flash"}>{flash.message}</p> : null}
+          {trackerFlash ? <p className={trackerFlash.type === "error" ? "form-error toolbar-flash" : "form-success toolbar-flash"}>{trackerFlash.message}</p> : null}
 
           {viewMode === "map" ? (
             <div className={mapExpanded ? "map-container map-expanded" : "map-container"}>
@@ -1150,7 +1294,7 @@ export function TripViewer({
             aria-label="Expand sidebar"
             title="Expand sidebar"
           >
-            <FontAwesomeIcon icon={faChevronRight} />
+            <FontAwesomeIcon icon={faExpand} />
           </button>
         ) : null}
 
@@ -1164,26 +1308,130 @@ export function TripViewer({
               {selectedDay.durationSeconds ? <span className="chip">{formatDriveTime(selectedDay.durationSeconds)}</span> : null}
               <span className="chip">{selectedDay.locations.length} location{selectedDay.locations.length === 1 ? "" : "s"}</span>
             </div>
-            <InlineEditableText
-              canEdit={editable}
-              label="day summary"
-              value={selectedDay.summary}
-              action={updateDayAction}
-              hiddenFields={dayHidden}
-              field="summary"
-              multiline
-              className="trip-summary"
-            />
-            <InlineEditableText
-              canEdit={editable}
-              label="callout"
-              value={selectedDay.callout}
-              action={updateDayAction}
-              hiddenFields={dayHidden}
-              field="callout"
-              multiline
-              className="trip-callout"
-            />
+            {selectedDay.posts.length || editable ? (
+              <div className="day-posts-primary">
+                <div className="day-posts-primary-header">
+                  <p className="eyebrow">Posts</p>
+                </div>
+                {editable ? (
+                  <form action={createPostAction} className="tracker-inline-form tracker-post-create-form">
+                    <input type="hidden" name="slug" value={trip.slug} />
+                    <input type="hidden" name="dayId" value={selectedDay.id} />
+                    <input type="hidden" name="selectedDayNumber" value={selectedDay.dayNumber} />
+                    <input className="tracker-inline-input" name="title" placeholder="Post title" />
+                    <textarea className="tracker-inline-input tracker-inline-textarea" name="body" rows={3} placeholder="Write the post..." />
+                    <button className="button-secondary tracker-inline-save" type="submit">
+                      Add post
+                    </button>
+                  </form>
+                ) : null}
+                {selectedDay.posts.length ? (
+                  <div className="day-posts-primary-list">
+                    {selectedDay.posts.map((post) => (
+                      <article key={post.id} className="day-post-primary-card">
+                        <div className="inline-item-header">
+                          <InlineEditableText
+                            canEdit={editable}
+                            label="post title"
+                            value={post.title}
+                            action={updatePostAction}
+                            hiddenFields={{ slug: trip.slug, postId: post.id, selectedDayNumber: selectedDay.dayNumber }}
+                            field="title"
+                            className="day-post-primary-title"
+                          />
+                          <div className="tracker-checkin-meta">
+                            <span>{formatShortDate(post.createdAt)}</span>
+                            <span>{formatTrackerTime(post.createdAt)}</span>
+                          </div>
+                          {editable ? (
+                            <DeleteInlineButton
+                              action={deletePostAction}
+                              hiddenFields={{ slug: trip.slug, postId: post.id, selectedDayNumber: selectedDay.dayNumber }}
+                              confirmMessage={`Delete post "${post.title}"?`}
+                            />
+                          ) : null}
+                        </div>
+                        <InlineEditableText
+                          canEdit={editable}
+                          label="post body"
+                          value={post.body}
+                          action={updatePostAction}
+                          hiddenFields={{ slug: trip.slug, postId: post.id, selectedDayNumber: selectedDay.dayNumber }}
+                          field="body"
+                          multiline
+                          className="day-post-primary-body"
+                          placeholder="No post text."
+                        />
+                        {editable ? (
+                          <form action={uploadPostMediaAction} className="photo-upload-form post-media-upload-form">
+                            <input type="hidden" name="slug" value={trip.slug} />
+                            <input type="hidden" name="postId" value={post.id} />
+                            <input type="hidden" name="selectedDayNumber" value={selectedDay.dayNumber} />
+                            <MediaUploadControl
+                              inputName="media"
+                              multiple
+                              hint="Attach photos or videos to this post."
+                            />
+                          </form>
+                        ) : null}
+                        {post.media.length ? (
+                          <div className="photo-grid post-media-grid">
+                            {post.media.map((media) => {
+                              const mediaTitle = media.title ?? `Day ${selectedDay.dayNumber} - ${selectedDay.endPlace.name}`;
+                              return (
+                                <figure key={media.id} className="photo-card">
+                                  {editable ? (
+                                    <div className="photo-card-actions">
+                                      <DeleteInlineButton
+                                        action={deletePostMediaAction}
+                                        hiddenFields={{ slug: trip.slug, mediaId: media.id, selectedDayNumber: selectedDay.dayNumber }}
+                                        confirmMessage={`Delete ${media.originalFilename}?`}
+                                      />
+                                    </div>
+                                  ) : null}
+                                  <button type="button" className="photo-card-button" onClick={() => setSelectedMedia(media)}>
+                                    {isVideoMedia(media) ? (
+                                      <video className="photo-card-media" src={media.filePath} muted playsInline preload="metadata" />
+                                    ) : (
+                                      <img className="photo-card-media" src={media.filePath} alt={media.originalFilename} />
+                                    )}
+                                  </button>
+                                  <figcaption>
+                                    <InlineEditableText
+                                      canEdit={editable}
+                                      label="media title"
+                                      value={media.title}
+                                      action={updatePostMediaAction}
+                                      hiddenFields={{ slug: trip.slug, mediaId: media.id, selectedDayNumber: selectedDay.dayNumber }}
+                                      field="title"
+                                      className="day-stop-name"
+                                      placeholder={mediaTitle}
+                                    />
+                                    <InlineEditableText
+                                      canEdit={editable}
+                                      label="media caption"
+                                      value={media.caption}
+                                      action={updatePostMediaAction}
+                                      hiddenFields={{ slug: trip.slug, mediaId: media.id, selectedDayNumber: selectedDay.dayNumber }}
+                                      field="caption"
+                                      multiline
+                                      className="muted"
+                                      placeholder="Add a caption."
+                                    />
+                                  </figcaption>
+                                </figure>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="muted">No posts for this day yet.</p>
+                )}
+              </div>
+            ) : null}
 
             {selectedDay.accommodationName || editable || activities.length || dinners.length ? (
               <div className="day-stops-highlight">
@@ -1334,6 +1582,37 @@ export function TripViewer({
                     </ul>
                   </div>
                 ) : null}
+                {selectedDayCheckIns.length ? (
+                  <div className="day-stop-group">
+                    <h3>Check-Ins</h3>
+                    <ul className="day-stop-cards">
+                      {selectedDayCheckIns.map((item) => (
+                        <li key={item.id} className="day-stop-card">
+                          <div className="tracker-checkin-meta">
+                            <strong>{resolveTrackerPointLabel(item, trackerCandidates)}</strong>
+                            <span>{formatTrackerTime(item.recordedAt)}</span>
+                          </div>
+                          {item.note ? <p className="day-stop-note">{item.note}</p> : null}
+                          <div className="day-stop-distance-row">
+                            {item.stateName ? <span className="chip">{item.stateName}</span> : null}
+                            <a
+                              className="chip chip-link"
+                              href={buildPlaceLookupUrl({
+                                name: item.note || "Check-in",
+                                latitude: item.latitude,
+                                longitude: item.longitude
+                              })}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Open check-in
+                            </a>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </article>
@@ -1359,13 +1638,16 @@ export function TripViewer({
                   <input type="hidden" name="tripId" value={trip.id} />
                   <input type="hidden" name="slug" value={trip.slug} />
                   <input type="hidden" name="selectedDayNumber" value={selectedDay.dayNumber} />
-                  <PhotoUploadControl />
+                  <MediaUploadControl />
                 </form>
               ) : null}
               {selectedDay.photos.length ? (
                 <div className="photo-grid">
-                  {selectedDay.photos.map((photo) => (
-                    <figure key={photo.id} className="photo-card">
+                  {selectedDay.photos.map((photo) => {
+                    const photoTitle = photo.title ?? `Day ${selectedDay.dayNumber} - ${selectedDay.endPlace.name}`;
+
+                    return (
+                      <figure key={photo.id} className="photo-card">
                       {editable ? (
                         <div className="photo-card-actions">
                           <DeleteInlineButton
@@ -1375,7 +1657,7 @@ export function TripViewer({
                           />
                         </div>
                       ) : null}
-                      <button type="button" className="photo-card-button" onClick={() => setSelectedPhoto(photo)}>
+                      <button type="button" className="photo-card-button" onClick={() => setSelectedMedia(photo)}>
                         {isVideoMedia(photo) ? (
                           <video className="photo-card-media" src={photo.filePath} muted playsInline preload="metadata" />
                         ) : (
@@ -1383,11 +1665,32 @@ export function TripViewer({
                         )}
                       </button>
                       <figcaption>
-                        <strong>{photo.originalFilename}</strong>
+                        <InlineEditableText
+                          canEdit={editable}
+                          label="photo title"
+                          value={photo.title}
+                          action={updatePhotoAction}
+                          hiddenFields={{ slug: trip.slug, photoId: photo.id, selectedDayNumber: selectedDay.dayNumber }}
+                          field="title"
+                          className="day-stop-name"
+                          placeholder={photoTitle}
+                        />
+                        <InlineEditableText
+                          canEdit={editable}
+                          label="photo caption"
+                          value={photo.caption}
+                          action={updatePhotoAction}
+                          hiddenFields={{ slug: trip.slug, photoId: photo.id, selectedDayNumber: selectedDay.dayNumber }}
+                          field="caption"
+                          multiline
+                          className="muted"
+                          placeholder="Add a caption."
+                        />
                         {photo.capturedAt ? <span>{formatShortDate(photo.capturedAt)}</span> : null}
                       </figcaption>
-                    </figure>
-                  ))}
+                      </figure>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="muted">No photos uploaded for this day yet.</p>
@@ -1396,32 +1699,33 @@ export function TripViewer({
           </article>
         </div>
       </section>
-      {selectedPhoto ? (
-        <div className="photo-lightbox" role="dialog" aria-modal="true" aria-label={selectedPhoto.originalFilename}>
-          <button className="photo-lightbox-backdrop" type="button" onClick={() => setSelectedPhoto(null)} aria-label="Close photo viewer" />
+      {selectedMedia ? (
+        <div className="photo-lightbox" role="dialog" aria-modal="true" aria-label={selectedMedia.originalFilename}>
+          <button className="photo-lightbox-backdrop" type="button" onClick={() => setSelectedMedia(null)} aria-label="Close photo viewer" />
           <div className="photo-lightbox-panel">
             <div className="photo-lightbox-toolbar">
               <div className="photo-lightbox-meta">
-                <strong>{selectedPhoto.originalFilename}</strong>
-                {selectedPhoto.capturedAt ? <span>{formatShortDate(selectedPhoto.capturedAt)}</span> : null}
+                <strong>{selectedMedia.title ?? `Day ${selectedDay.dayNumber} - ${selectedDay.endPlace.name}`}</strong>
+                {selectedMedia.caption ? <span>{selectedMedia.caption}</span> : null}
+                {selectedMedia.capturedAt ? <span>{formatShortDate(selectedMedia.capturedAt)}</span> : null}
               </div>
               <div className="inline-actions">
-                <button className="button-secondary icon-button" type="button" onClick={() => handleSharePhoto(selectedPhoto)} aria-label="Share photo" title="Share photo">
+                <button className="button-secondary icon-button" type="button" onClick={() => handleSharePhoto(selectedMedia)} aria-label="Share photo" title="Share photo">
                   <FontAwesomeIcon icon={faShareNodes} />
                 </button>
-                <a className="button-secondary" href={selectedPhoto.filePath} download={selectedPhoto.originalFilename}>
+                <a className="button-secondary" href={selectedMedia.filePath} download={selectedMedia.originalFilename}>
                   Download
                 </a>
-                <button className="button-secondary icon-button" type="button" onClick={() => setSelectedPhoto(null)} aria-label="Close photo viewer" title="Close photo viewer">
+                <button className="button-secondary icon-button" type="button" onClick={() => setSelectedMedia(null)} aria-label="Close photo viewer" title="Close photo viewer">
                   <FontAwesomeIcon icon={faXmark} />
                 </button>
               </div>
             </div>
             <div className="photo-lightbox-image-wrap">
-              {isVideoMedia(selectedPhoto) ? (
-                <video className="photo-lightbox-image" src={selectedPhoto.filePath} controls playsInline preload="metadata" />
+              {isVideoMedia(selectedMedia) ? (
+                <video className="photo-lightbox-image" src={selectedMedia.filePath} controls playsInline preload="metadata" />
               ) : (
-                <img className="photo-lightbox-image" src={selectedPhoto.filePath} alt={selectedPhoto.originalFilename} />
+                <img className="photo-lightbox-image" src={selectedMedia.filePath} alt={selectedMedia.originalFilename} />
               )}
             </div>
           </div>

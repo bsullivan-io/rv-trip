@@ -15,6 +15,9 @@ export async function getTripBySlug(slug: string) {
   return prisma.trip.findUnique({
     where: { slug },
     include: {
+      trackPoints: {
+        orderBy: { recordedAt: "asc" }
+      },
       hotDogPlaces: {
         orderBy: [{ tripDayId: "asc" }, { name: "asc" }],
         include: {
@@ -34,6 +37,65 @@ export async function getTripBySlug(slug: string) {
           },
           photos: {
             orderBy: { createdAt: "asc" }
+          },
+          posts: {
+            orderBy: { createdAt: "desc" },
+            include: {
+              media: {
+                orderBy: { createdAt: "asc" }
+              }
+            }
+          },
+          stops: {
+            orderBy: [{ kind: "asc" }, { sortOrder: "asc" }],
+            include: {
+              place: true
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+export async function getTripTrackerBySlug(slug: string) {
+  return prisma.trip.findUnique({
+    where: { slug },
+    include: {
+      trackPoints: {
+        orderBy: { recordedAt: "asc" },
+        include: {
+          tripDay: {
+            select: {
+              id: true,
+              dayNumber: true,
+              date: true,
+              title: true
+            }
+          }
+        }
+      },
+      days: {
+        orderBy: { dayNumber: "asc" },
+        include: {
+          startPlace: true,
+          endPlace: true,
+          locations: {
+            orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+            include: {
+              place: true
+            }
+          },
+          photos: {
+            orderBy: { createdAt: "asc" }
+          },
+          posts: {
+            orderBy: { createdAt: "desc" },
+            include: {
+              media: {
+                orderBy: { createdAt: "asc" }
+              }
+            }
           },
           stops: {
             orderBy: [{ kind: "asc" }, { sortOrder: "asc" }],
@@ -67,6 +129,14 @@ export async function getAdminTrip(tripId: string) {
           },
           photos: {
             orderBy: { createdAt: "asc" }
+          },
+          posts: {
+            orderBy: { createdAt: "desc" },
+            include: {
+              media: {
+                orderBy: { createdAt: "asc" }
+              }
+            }
           },
           stops: {
             orderBy: [{ kind: "asc" }, { sortOrder: "asc" }],

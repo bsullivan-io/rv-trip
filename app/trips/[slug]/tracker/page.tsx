@@ -1,0 +1,447 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import {
+  deleteTripPostAction,
+  deleteTripPostMediaAction,
+  deleteTrackerPointAction,
+  deleteTripPhotoAction,
+  updateTripPostAction,
+  updateTripPostMediaAction,
+  updateTrackerPointAction,
+  updateTripPhotoAction,
+  uploadTripPostMediaAction
+} from "@/app/trips/[slug]/actions";
+import { TripStageTabs } from "@/components/public/trip-stage-tabs";
+import { TrackerMap } from "@/components/public/tracker-map";
+import { EditModeGate } from "@/components/ui/edit-mode";
+import { getAdminSession } from "@/lib/auth";
+import { formatFullDateLabel, formatShortDate } from "@/lib/dates";
+import { getTripTrackerBySlug } from "@/lib/data";
+import { resolveTrackerPointLabel } from "@/lib/tracker-labels";
+import { sumTrackedMiles } from "@/lib/tracker";
+
+export const dynamic = "force-dynamic";
+
+type TrackerPageProps = {
+  params: Promise<{
+    slug: string;
+  }>;
+};
+
+function formatPointTimestamp(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(value);
+}
+
+function isVideoMedia(mimeType: string | null | undefined) {
+  return mimeType?.startsWith("video/") ?? false;
+}
+
+export default async function TripTrackerPage({ params }: TrackerPageProps) {
+  const { slug } = await params;
+  const [trip, adminSession] = await Promise.all([getTripTrackerBySlug(slug), getAdminSession()]);
+
+  if (!trip) {
+    notFound();
+  }
+
+  const dayCandidates = new Map(
+    trip.days.map((day) => [
+      day.id,
+      [
+        ...day.locations.map((location) => ({
+          name: location.place.name,
+          latitude: location.place.latitude,
+          longitude: location.place.longitude
+        })),
+        ...day.stops
+          .filter((stop) => stop.latitude != null || stop.place?.latitude != null)
+          .map((stop) => ({
+            name: stop.name,
+            latitude: (stop.latitude ?? stop.place?.latitude)!,
+            longitude: (stop.longitude ?? stop.place?.longitude)!
+          }))
+      ]
+    ])
+  );
+  const points = trip.trackPoints.map((point) => ({
+    id: point.id,
+    latitude: point.latitude,
+    longitude: point.longitude,
+    recordedAt: point.recordedAt.toISOString(),
+    source: point.source,
+    label: resolveTrackerPointLabel(point, point.tripDay ? dayCandidates.get(point.tripDay.id) ?? [] : []),
+    note: point.note,
+    cityName: point.cityName,
+    stateName: point.stateName,
+    dayNumber: point.tripDay?.dayNumber ?? null
+  }));
+  const statesVisited = new Set(trip.trackPoints.map((point) => point.stateCode).filter(Boolean));
+  const totalMiles = sumTrackedMiles(trip.trackPoints);
+  const totalCheckIns = trip.trackPoints.filter((point) => point.source === "checkin").length;
+  const trackedDays = new Set(
+    trip.trackPoints.map((point) => point.tripDayId ?? point.recordedAt.toISOString().slice(0, 10))
+  );
+  const averageMilesPerDay = trackedDays.size ? Math.round(totalMiles / trackedDays.size) : 0;
+  const latestCheckIn = [...trip.trackPoints]
+    .filter((point) => point.source === "checkin")
+    .sort((left, right) => right.recordedAt.getTime() - left.recordedAt.getTime())[0] ?? null;
+  const currentLocationLabel = latestCheckIn
+    ? [latestCheckIn.cityName, latestCheckIn.stateCode ?? latestCheckIn.stateName].filter(Boolean).join(", ")
+    : "Unknown";
+  const media = trip.days.flatMap((day) =>
+    day.photos.map((photo) => ({
+      id: photo.id,
+      filePath: photo.filePath,
+      originalFilename: photo.originalFilename,
+      title: photo.title,
+      caption: photo.caption,
+      mimeType: photo.mimeType,
+      dayNumber: day.dayNumber
+    }))
+  );
+  const feed = [
+    ...trip.trackPoints.map((point) => ({
+      id: point.id,
+      type: "point" as const,
+      timestamp: point.recordedAt,
+      day: point.tripDay
+        ? trip.days.find((day) => day.id === point.tripDay?.id) ?? null
+        : null,
+      point
+    })),
+    ...trip.days.flatMap((day) =>
+      day.posts.map((post) => ({
+        id: post.id,
+        type: "post" as const,
+        timestamp: post.createdAt,
+        day,
+        post
+      }))
+    )
+  ].sort((left, right) => right.timestamp.getTime() - left.timestamp.getTime());
+
+  return (
+    <main className="trip-summary-shell">
+      <section className="trip-summary-panel tracker-page-panel">
+        <EditModeGate
+          enabled={Boolean(adminSession)}
+          fallback={null}
+        >
+          <div className="trip-summary-toolbar">
+            <Link className="button-secondary" href={`/trips/${trip.slug}`}>
+              Back to Trip
+            </Link>
+          </div>
+        </EditModeGate>
+
+        <header className="tracker-page-header">
+          <h1>{trip.title}</h1>
+          <p className="trip-summary-range tracker-page-range">
+            {trip.startDate ? formatShortDate(trip.startDate) : "Date not set"} to {trip.endDate ? formatShortDate(trip.endDate) : "Date not set"}
+          </p>
+          <p className="eyebrow tracker-page-subheading">Trip Tracker</p>
+        </header>
+
+        <TripStageTabs slug={trip.slug} value="tracker" className="tracker-stage-tabs" />
+
+        <section className="section-card tracker-map-card">
+          <TrackerMap points={points} />
+        </section>
+
+        <section className="tracker-dashboard-stats">
+          <article className="tracker-stat-card">
+            <strong>{statesVisited.size}</strong>
+            <span>States Visited</span>
+          </article>
+          <article className="tracker-stat-card">
+            <strong>{totalMiles}</strong>
+            <span>Miles Traveled</span>
+          </article>
+          <article className="tracker-stat-card">
+            <strong>{totalCheckIns}</strong>
+            <span>Check Ins</span>
+          </article>
+          <article className="tracker-stat-card">
+            <strong>{averageMilesPerDay}</strong>
+            <span>Average Miles Per Day</span>
+          </article>
+          <article className="tracker-stat-card tracker-stat-card-location">
+            <strong>{currentLocationLabel}</strong>
+            <span>Current Location</span>
+          </article>
+        </section>
+
+        <section className="section-card tracker-media-section">
+          <div className="trip-calendar-header">
+            <div>
+              <p className="eyebrow">Trip Media</p>
+              <h2>Photos and videos from the full trip</h2>
+            </div>
+            <span className="chip">{media.length} items</span>
+          </div>
+          {media.length ? (
+            <div className="tracker-media-grid">
+              {media.map((item) => {
+                const mediaTitle =
+                  item.title ?? `Day ${item.dayNumber} - ${trip.days.find((day) => day.dayNumber === item.dayNumber)?.endPlace.name ?? "Trip stop"}`;
+
+                return (
+                  <figure key={item.id} className="tracker-media-card">
+                  {item.mimeType?.startsWith("video/") ? (
+                    <video className="tracker-media" src={item.filePath} controls playsInline preload="metadata" />
+                  ) : (
+                    <img className="tracker-media" src={item.filePath} alt={item.originalFilename} />
+                  )}
+                  <figcaption>
+                    <EditModeGate
+                      enabled={Boolean(adminSession)}
+                      fallback={
+                        <>
+                          <strong>{mediaTitle}</strong>
+                          {item.caption ? <p className="tracker-media-caption">{item.caption}</p> : null}
+                          <span>Day {item.dayNumber}</span>
+                        </>
+                      }
+                    >
+                        <form action={updateTripPhotoAction} className="tracker-inline-form">
+                          <input type="hidden" name="slug" value={trip.slug} />
+                          <input type="hidden" name="photoId" value={item.id} />
+                          <input type="hidden" name="returnTo" value="tracker" />
+                          <input type="hidden" name="field" value="title" />
+                          <input
+                            className="tracker-inline-input"
+                            name="value"
+                            defaultValue={mediaTitle}
+                            placeholder="Title"
+                          />
+                          <button className="button-secondary tracker-inline-save" type="submit">
+                            Save
+                          </button>
+                        </form>
+                        <form action={updateTripPhotoAction} className="tracker-inline-form tracker-inline-form-caption">
+                          <input type="hidden" name="slug" value={trip.slug} />
+                          <input type="hidden" name="photoId" value={item.id} />
+                          <input type="hidden" name="returnTo" value="tracker" />
+                          <input type="hidden" name="field" value="caption" />
+                          <textarea
+                            className="tracker-inline-input tracker-inline-textarea"
+                            name="value"
+                            defaultValue={item.caption ?? ""}
+                            placeholder="Caption"
+                            rows={2}
+                          />
+                          <button className="button-secondary tracker-inline-save" type="submit">
+                            Save
+                          </button>
+                        </form>
+                        <div className="tracker-media-meta-row">
+                          <span>Day {item.dayNumber}</span>
+                          <form action={deleteTripPhotoAction}>
+                            <input type="hidden" name="slug" value={trip.slug} />
+                            <input type="hidden" name="photoId" value={item.id} />
+                            <input type="hidden" name="returnTo" value="tracker" />
+                            <button className="tracker-delete-button" type="submit" aria-label={`Delete ${item.originalFilename}`}>
+                              [x] Delete
+                            </button>
+                          </form>
+                        </div>
+                    </EditModeGate>
+                  </figcaption>
+                  </figure>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="muted">No photos or videos uploaded for this trip yet.</p>
+          )}
+        </section>
+
+        <section className="tracker-timeline">
+          <article className="section-card tracker-day-card">
+            <div className="trip-calendar-header">
+              <div>
+                <p className="eyebrow">Feed</p>
+                <h2>Latest posts and check-ins</h2>
+              </div>
+              <span className="chip">{feed.length} entries</span>
+            </div>
+            <ul className="day-stop-cards tracker-point-list">
+              {feed.map((entry) => {
+                if (entry.type === "point") {
+                  const trackerCandidates = entry.day ? dayCandidates.get(entry.day.id) ?? [] : [];
+                  const point = entry.point;
+
+                  return (
+                    <li key={`point-${point.id}`} className="day-stop-card tracker-point-item">
+                      <div className="tracker-point-header">
+                        <div className="tracker-point-header-main">
+                          <strong>{resolveTrackerPointLabel(point, trackerCandidates)}</strong>
+                          <span>{formatPointTimestamp(point.recordedAt)}</span>
+                        </div>
+                        <EditModeGate enabled={Boolean(adminSession)} fallback={null}>
+                          <form action={deleteTrackerPointAction}>
+                            <input type="hidden" name="slug" value={trip.slug} />
+                            <input type="hidden" name="pointId" value={point.id} />
+                            <button className="tracker-delete-button" type="submit" aria-label="Delete tracker point">
+                              [x] Delete
+                            </button>
+                          </form>
+                        </EditModeGate>
+                      </div>
+                      <p className="tracker-point-meta">
+                        {entry.day ? `Day ${entry.day.dayNumber} · ${entry.day.title}` : "Unassigned"} · {point.stateName ?? "State unavailable"} · {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
+                      </p>
+                      <EditModeGate
+                        enabled={Boolean(adminSession)}
+                        fallback={point.note ? <p className="tracker-point-note">{point.note}</p> : null}
+                      >
+                        <form action={updateTrackerPointAction} className="tracker-inline-form tracker-inline-form-caption">
+                          <input type="hidden" name="slug" value={trip.slug} />
+                          <input type="hidden" name="pointId" value={point.id} />
+                          <input type="hidden" name="field" value="note" />
+                          <textarea
+                            className="tracker-inline-input tracker-inline-textarea"
+                            name="value"
+                            defaultValue={point.note ?? ""}
+                            placeholder="Check-in text"
+                            rows={2}
+                          />
+                          <button className="button-secondary tracker-inline-save" type="submit">
+                            Save
+                          </button>
+                        </form>
+                      </EditModeGate>
+                    </li>
+                  );
+                }
+
+                const post = entry.post;
+                const day = entry.day;
+
+                return (
+                  <li key={`post-${post.id}`} className="day-stop-card tracker-point-item tracker-post-item">
+                    <div className="tracker-point-header">
+                      <div className="tracker-point-header-main">
+                        <strong>{post.title}</strong>
+                        <span>{formatPointTimestamp(post.createdAt)}</span>
+                      </div>
+                      <EditModeGate enabled={Boolean(adminSession)} fallback={null}>
+                        <form action={deleteTripPostAction}>
+                          <input type="hidden" name="slug" value={trip.slug} />
+                          <input type="hidden" name="postId" value={post.id} />
+                          <input type="hidden" name="returnTo" value="tracker" />
+                          <button className="tracker-delete-button" type="submit" aria-label="Delete post">
+                            [x] Delete
+                          </button>
+                        </form>
+                      </EditModeGate>
+                    </div>
+                    <p className="tracker-point-meta">
+                      {day ? `Day ${day.dayNumber} · ${day.title}` : "Day unavailable"}
+                    </p>
+                    <EditModeGate
+                      enabled={Boolean(adminSession)}
+                      fallback={<p className="tracker-point-note">{post.body}</p>}
+                    >
+                        <form action={updateTripPostAction} className="tracker-inline-form">
+                          <input type="hidden" name="slug" value={trip.slug} />
+                          <input type="hidden" name="postId" value={post.id} />
+                          <input type="hidden" name="returnTo" value="tracker" />
+                          <input type="hidden" name="field" value="title" />
+                          <input className="tracker-inline-input" name="value" defaultValue={post.title} />
+                          <button className="button-secondary tracker-inline-save" type="submit">
+                            Save
+                          </button>
+                        </form>
+                        <form action={updateTripPostAction} className="tracker-inline-form tracker-inline-form-caption">
+                          <input type="hidden" name="slug" value={trip.slug} />
+                          <input type="hidden" name="postId" value={post.id} />
+                          <input type="hidden" name="returnTo" value="tracker" />
+                          <input type="hidden" name="field" value="body" />
+                          <textarea className="tracker-inline-input tracker-inline-textarea" name="value" defaultValue={post.body} rows={3} />
+                          <button className="button-secondary tracker-inline-save" type="submit">
+                            Save
+                          </button>
+                        </form>
+                        <form action={uploadTripPostMediaAction} className="tracker-inline-form tracker-post-media-upload">
+                          <input type="hidden" name="slug" value={trip.slug} />
+                          <input type="hidden" name="postId" value={post.id} />
+                          <input type="hidden" name="returnTo" value="tracker" />
+                          <input type="file" name="media" accept="image/*,video/*" multiple />
+                          <button className="button-secondary tracker-inline-save" type="submit">
+                            Upload media
+                          </button>
+                        </form>
+                    </EditModeGate>
+                    {post.media.length ? (
+                      <div className="tracker-post-media-grid">
+                        {post.media.map((item) => {
+                          const mediaTitle = item.title ?? `Day ${day?.dayNumber ?? "?"} - ${day?.endPlace.name ?? "Trip stop"}`;
+
+                          return (
+                            <figure key={item.id} className="tracker-media-card tracker-post-media-card">
+                              {isVideoMedia(item.mimeType) ? (
+                                <video className="tracker-media" src={item.filePath} controls playsInline preload="metadata" />
+                              ) : (
+                                <img className="tracker-media" src={item.filePath} alt={item.originalFilename} />
+                              )}
+                              <figcaption>
+                                <EditModeGate
+                                  enabled={Boolean(adminSession)}
+                                  fallback={
+                                    <>
+                                      <strong>{mediaTitle}</strong>
+                                      {item.caption ? <p className="tracker-media-caption">{item.caption}</p> : null}
+                                    </>
+                                  }
+                                >
+                                    <form action={updateTripPostMediaAction} className="tracker-inline-form">
+                                      <input type="hidden" name="slug" value={trip.slug} />
+                                      <input type="hidden" name="mediaId" value={item.id} />
+                                      <input type="hidden" name="returnTo" value="tracker" />
+                                      <input type="hidden" name="field" value="title" />
+                                      <input className="tracker-inline-input" name="value" defaultValue={mediaTitle} placeholder="Title" />
+                                      <button className="button-secondary tracker-inline-save" type="submit">
+                                        Save
+                                      </button>
+                                    </form>
+                                    <form action={updateTripPostMediaAction} className="tracker-inline-form tracker-inline-form-caption">
+                                      <input type="hidden" name="slug" value={trip.slug} />
+                                      <input type="hidden" name="mediaId" value={item.id} />
+                                      <input type="hidden" name="returnTo" value="tracker" />
+                                      <input type="hidden" name="field" value="caption" />
+                                      <textarea className="tracker-inline-input tracker-inline-textarea" name="value" defaultValue={item.caption ?? ""} rows={2} placeholder="Caption" />
+                                      <button className="button-secondary tracker-inline-save" type="submit">
+                                        Save
+                                      </button>
+                                    </form>
+                                    <form action={deleteTripPostMediaAction}>
+                                      <input type="hidden" name="slug" value={trip.slug} />
+                                      <input type="hidden" name="mediaId" value={item.id} />
+                                      <input type="hidden" name="returnTo" value="tracker" />
+                                      <button className="tracker-delete-button" type="submit" aria-label={`Delete ${item.originalFilename}`}>
+                                        [x] Delete
+                                      </button>
+                                    </form>
+                                </EditModeGate>
+                              </figcaption>
+                            </figure>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </article>
+        </section>
+      </section>
+    </main>
+  );
+}

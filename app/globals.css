@@ -54,18 +54,27 @@ textarea {
   align-items: center;
   padding: 10px 16px;
   margin-bottom: 12px;
-  border: 1px solid var(--line);
+  width: 100%;
   border-top: 4px solid var(--accent-2);
   background: #ffffff;
   box-shadow: var(--shadow);
 }
 
+.site-header-inner {
+  width: min(1500px, calc(100vw - 28px));
+  margin: 0 auto;
+}
+
 .brand {
-  font-family: Georgia, "Iowan Old Style", serif;
-  font-size: 1.18rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
   line-height: 1;
+}
+
+.brand-logo {
+  display: block;
+  width: auto;
+  height: 52px;
 }
 
 .top-nav {
@@ -77,6 +86,12 @@ textarea {
 
 .top-nav a:hover {
   color: var(--accent);
+}
+
+.header-lock-button {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 12px;
 }
 
 .panel {
@@ -265,47 +280,50 @@ textarea {
 
 .sidebar-handle {
   position: absolute;
-  top: 76px;
-  right: -14px;
+  top: 22px;
+  right: 0;
   z-index: 20;
-  width: 20px;
-  height: 34px;
-  border: 1px solid rgba(16, 35, 63, 0.18);
-  background: #c7ced8;
-  color: #38485f;
-  font-size: 0.72rem;
+  width: 18px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: rgba(16, 35, 63, 0.62);
+  font-size: 0.98rem;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 18px rgba(16, 35, 63, 0.22);
-  opacity: 0.98;
   cursor: pointer;
-  border-radius: 8px;
+  transform: translateX(50%);
   transition:
     transform 0.16s ease,
     opacity 0.16s ease,
-    background 0.16s ease,
-    color 0.16s ease,
-    box-shadow 0.16s ease;
+    color 0.16s ease;
 }
 
 .sidebar-handle:hover {
   opacity: 1;
-  background: #b8c0cc;
-  color: #10233f;
-  box-shadow: 0 10px 22px rgba(16, 35, 63, 0.26);
-  transform: translateX(1px);
+  color: rgba(16, 35, 63, 0.9);
+  transform: translateX(calc(50% + 1px));
 }
 
 .sidebar-handle:active {
-  transform: translateX(2px);
+  transform: translateX(calc(50% + 2px));
 }
 
 .sidebar-handle-restore {
   top: 76px;
   left: 0;
   right: auto;
+  transform: translateX(-100%);
+}
+
+.sidebar-handle-restore:hover {
+  transform: translateX(calc(-100% - 1px));
+}
+
+.sidebar-handle-restore:active {
+  transform: translateX(calc(-100% - 2px));
 }
 
 .trip-header {
@@ -627,6 +645,41 @@ textarea {
 .trip-stage-controls {
   flex-wrap: wrap;
   flex: 1 1 auto;
+}
+
+.trip-stage-tabs-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.trip-stage-tabs {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.trip-stage-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.trip-stage-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.trip-stage-tab-icon {
+  font-size: 0.92rem;
+}
+
+.trip-stage-tab[data-selected] {
+  color: var(--accent-2);
+}
+
+.tracker-stage-tabs {
+  margin-bottom: 16px;
 }
 
 .hotdog-view-button {
@@ -962,6 +1015,48 @@ textarea {
   padding: 12px 14px;
 }
 
+.day-posts-primary {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 18px;
+}
+
+.day-posts-primary-list {
+  display: grid;
+  gap: 20px;
+}
+
+.day-post-primary-card {
+  display: grid;
+  gap: 12px;
+}
+
+.day-post-primary-title {
+  margin: 0;
+  font-family: Georgia, "Iowan Old Style", serif;
+  line-height: 1.02;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  color: var(--ink);
+}
+
+.day-post-primary-title .inline-edit-content,
+.day-post-primary-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.day-post-primary-body {
+  color: var(--ink);
+  font-size: 1.08rem;
+  line-height: 1.68;
+}
+
+.day-post-primary-body .inline-edit-content {
+  display: block;
+}
+
 .day-stop-name {
   font-weight: 600;
   font-size: 1.05rem;
@@ -986,6 +1081,15 @@ textarea {
 
 .day-stop-distance-row .chip {
   font-size: 0.88rem;
+}
+
+.tracker-post-create-form,
+.post-media-upload-form {
+  margin-bottom: 12px;
+}
+
+.post-media-grid {
+  margin-top: 12px;
 }
 
 .draggable-location {
@@ -1245,6 +1349,281 @@ textarea {
   color: var(--muted);
 }
 
+.toolbar-checkin-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.phone-tracker-link {
+  white-space: nowrap;
+}
+
+.tracker-checkin-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.tracker-page-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.tracker-page-header {
+  display: grid;
+  gap: 14px;
+}
+
+.tracker-page-header h1 {
+  margin: 0;
+  font-family: Georgia, "Iowan Old Style", serif;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+
+.tracker-page-header .eyebrow {
+  margin-bottom: 0;
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+}
+
+.tracker-page-subheading {
+  margin-top: 10px;
+}
+
+.tracker-page-range {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.tracker-dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.tracker-stat-card {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 148px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+
+.tracker-stat-card strong {
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  line-height: 1;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.tracker-stat-card span {
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tracker-stat-card-location strong {
+  font-size: clamp(1.6rem, 3.2vw, 2.5rem);
+  text-align: center;
+}
+
+.tracker-map-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.tracker-map,
+.tracker-map-empty {
+  width: 100%;
+  min-height: 420px;
+}
+
+.tracker-map-empty {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  padding: 40px 20px;
+}
+
+.tracker-timeline {
+  display: grid;
+  gap: 18px;
+}
+
+.tracker-media-section {
+  display: grid;
+  gap: 18px;
+}
+
+.tracker-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.tracker-post-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.tracker-media-card {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.tracker-media {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.tracker-media-card figcaption {
+  display: grid;
+  gap: 3px;
+}
+
+.tracker-post-media-card figcaption {
+  gap: 8px;
+}
+
+.tracker-media-card figcaption strong,
+.tracker-media-card figcaption span {
+  display: block;
+}
+
+.tracker-media-card figcaption span {
+  color: var(--muted);
+}
+
+.tracker-day-card {
+  display: grid;
+  gap: 12px;
+}
+
+.tracker-day-card h2,
+.tracker-day-title {
+  margin: 0;
+}
+
+.tracker-day-title {
+  color: var(--muted);
+}
+
+.tracker-point-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.tracker-point-item {
+  border-top: 0;
+}
+
+.tracker-post-item {
+  border-left-color: #c62839;
+}
+
+.tracker-point-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.tracker-point-header-main {
+  display: grid;
+  gap: 6px;
+}
+
+.tracker-point-header strong,
+.tracker-point-note,
+.tracker-point-meta {
+  margin: 0;
+}
+
+.tracker-point-meta {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.tracker-point-note {
+  margin-top: 6px;
+}
+
+.tracker-inline-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.tracker-inline-form-caption {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.tracker-inline-input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.tracker-inline-textarea {
+  resize: vertical;
+}
+
+.tracker-inline-save {
+  min-height: 38px;
+}
+
+.tracker-media-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.tracker-delete-button {
+  border: 0;
+  background: transparent;
+  color: #c62839;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tracker-delete-button:hover {
+  text-decoration: underline;
+}
+
+.tracker-media-caption {
+  margin: 0;
+  color: var(--ink);
+}
+
 @page {
   margin: 0.5in;
 }
@@ -1478,7 +1857,7 @@ textarea {
 
 .trip-detail {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
   gap: 18px;
   padding: 26px;
 }
@@ -2020,5 +2399,17 @@ textarea {
   .day-card span {
     font-size: 0.92rem;
     line-height: 1.35;
+  }
+
+  .tracker-dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .tracker-stat-card {
+    min-height: 112px;
+  }
+
+  .tracker-media-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

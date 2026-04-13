@@ -2,12 +2,19 @@ import { notFound } from "next/navigation";
 import {
   addPlaceSearchAction,
   addStopFromGoogleMapsAction,
+  createTripPostAction,
+  deleteTripPostAction,
+  deleteTripPostMediaAction,
   deleteTripPhotoAction,
   deleteLocationInlineAction,
   deleteStopInlineAction,
+  updateTripPostAction,
+  updateTripPostMediaAction,
   uploadTripPhotoAction,
+  uploadTripPostMediaAction,
   updateDayInlineAction,
   updateLocationInlineAction,
+  updateTripPhotoAction,
   updateStopInlineAction,
   updateTripInlineAction
 } from "@/app/trips/[slug]/actions";
@@ -27,6 +34,7 @@ type TripPageProps = {
     place?: string;
     error?: string;
     mode?: string;
+    view?: string;
   }>;
 };
 
@@ -51,6 +59,18 @@ export default async function TripPage({ params, searchParams }: TripPageProps) 
         notes: trip.notes,
         startDate: trip.startDate?.toISOString() ?? null,
         endDate: trip.endDate?.toISOString() ?? null,
+        trackPoints: trip.trackPoints.map((point) => ({
+          id: point.id,
+          tripDayId: point.tripDayId,
+          latitude: point.latitude,
+          longitude: point.longitude,
+          recordedAt: point.recordedAt.toISOString(),
+          source: point.source,
+          note: point.note,
+          cityName: point.cityName,
+          stateCode: point.stateCode,
+          stateName: point.stateName
+        })),
         hotDogPlaces: trip.hotDogPlaces.map((place) => ({
           id: place.id,
           name: place.name,
@@ -85,8 +105,25 @@ export default async function TripPage({ params, searchParams }: TripPageProps) 
             id: photo.id,
             filePath: photo.filePath,
             originalFilename: photo.originalFilename,
+            title: photo.title,
+            caption: photo.caption,
             mimeType: photo.mimeType,
             capturedAt: photo.capturedAt?.toISOString() ?? null
+          })),
+          posts: day.posts.map((post) => ({
+            id: post.id,
+            title: post.title,
+            body: post.body,
+            createdAt: post.createdAt.toISOString(),
+            media: post.media.map((media) => ({
+              id: media.id,
+              filePath: media.filePath,
+              originalFilename: media.originalFilename,
+              title: media.title,
+              caption: media.caption,
+              mimeType: media.mimeType,
+              capturedAt: media.capturedAt?.toISOString() ?? null
+            }))
           })),
           stops: day.stops.map((stop) => ({
             id: stop.id,
@@ -111,6 +148,8 @@ export default async function TripPage({ params, searchParams }: TripPageProps) 
                 message:
                   resolvedSearchParams.mode === "photo"
                     ? `Uploaded "${resolvedSearchParams.added}" and matched it to Day ${resolvedSearchParams.day}.`
+                    : resolvedSearchParams.mode === "post"
+                      ? `Posted "${resolvedSearchParams.added}" on Day ${resolvedSearchParams.day}.`
                     :
                   resolvedSearchParams.mode === "location"
                     ? `Added location "${resolvedSearchParams.added}" to Day ${resolvedSearchParams.day}.`
@@ -119,14 +158,28 @@ export default async function TripPage({ params, searchParams }: TripPageProps) 
             : null
       }
       initialSelectedDayNumber={resolvedSearchParams.day ? Number(resolvedSearchParams.day) : 0}
+      initialViewMode={
+        resolvedSearchParams.view === "calendar" ||
+        resolvedSearchParams.view === "locations" ||
+        resolvedSearchParams.view === "hotdogs"
+          ? resolvedSearchParams.view
+          : "map"
+      }
       loginUrl={`/admin/login?next=${encodeURIComponent(`/trips/${trip.slug}`)}`}
       addStopAction={addStopFromGoogleMapsAction}
       addPlaceSearchAction={addPlaceSearchAction}
       uploadTripPhotoAction={uploadTripPhotoAction}
+      createPostAction={createTripPostAction}
+      updatePostAction={updateTripPostAction}
+      deletePostAction={deleteTripPostAction}
+      uploadPostMediaAction={uploadTripPostMediaAction}
+      updatePostMediaAction={updateTripPostMediaAction}
+      deletePostMediaAction={deleteTripPostMediaAction}
       updateTripAction={updateTripInlineAction}
       updateDayAction={updateDayInlineAction}
       updateLocationAction={updateLocationInlineAction}
       updateStopAction={updateStopInlineAction}
+      updatePhotoAction={updateTripPhotoAction}
       deleteLocationAction={deleteLocationInlineAction}
       deleteStopAction={deleteStopInlineAction}
       deletePhotoAction={deleteTripPhotoAction}

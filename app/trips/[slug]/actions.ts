@@ -9,7 +9,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getPlaceDetails, searchTextPlaces } from "@/lib/google-places";
 import { recomputeTripActivityDistances, recomputeTripRoutes } from "@/lib/google-routes";
 import { distanceMiles, makeUniqueSlug, parseGoogleMapsLink } from "@/lib/google-maps";
-import { deleteUploadedPhoto, extractPhotoMetadata, matchPhotoToDay, saveUploadedPhoto } from "@/lib/photo-import";
+import { deleteUploadedPhoto, extractPhotoMetadata, matchPhotoToDay, saveUploadedMedia, saveUploadedPhoto } from "@/lib/photo-import";
 import { prisma } from "@/lib/prisma";
 import { slugify, toOptionalString, toRequiredString } from "@/lib/utils";
 
@@ -18,9 +18,20 @@ function buildTripRedirect(slug: string, params: Record<string, string>) {
   return `/trips/${slug}${search.toString() ? `?${search.toString()}` : ""}`;
 }
 
+function buildTrackerRedirect(slug: string, params: Record<string, string> = {}) {
+  const search = new URLSearchParams(params);
+  return `/trips/${slug}/tracker${search.toString() ? `?${search.toString()}` : ""}`;
+}
+
+function buildDayMediaTitle(dayNumber: number, locationName: string) {
+  return `Day ${dayNumber} - ${locationName}`;
+}
+
 async function revalidateTrip(slug: string) {
   revalidatePath(`/trips/${slug}`);
   revalidatePath(`/trips/${slug}/locations`);
+  revalidatePath(`/trips/${slug}/summary`);
+  revalidatePath(`/trips/${slug}/tracker`);
   revalidatePath(`/trips/${slug}/batch-activities`);
   revalidatePath("/");
 }
@@ -439,7 +450,11 @@ export async function uploadTripPhotoAction(formData: FormData) {
         dayNumber: day.dayNumber,
         date: day.date?.toISOString() ?? null,
         locations: day.locations,
-        endPlace: day.endPlace
+        endPlace: {
+          name: day.endPlace.name,
+          latitude: day.endPlace.latitude,
+          longitude: day.endPlace.longitude
+        }
       })),
       metadata,
       selectedDayNumber
@@ -450,6 +465,8 @@ export async function uploadTripPhotoAction(formData: FormData) {
         tripDayId: matchedDay.id,
         filePath: relativePath,
         originalFilename: file.name,
+        title: `Day ${matchedDay.dayNumber} - ${matchedDay.endPlace.name}`,
+        caption: null,
         mimeType: file.type || null,
         capturedAt: metadata.capturedAt,
         latitude: metadata.latitude,
@@ -818,7 +835,8 @@ export async function deleteTripPhotoAction(formData: FormData) {
 
   const slug = toRequiredString(formData.get("slug"), "Trip slug");
   const photoId = toRequiredString(formData.get("photoId"), "Photo ID");
-  const selectedDayNumber = toRequiredString(formData.get("selectedDayNumber"), "Selected day");
+  const selectedDayNumber = String(formData.get("selectedDayNumber") ?? "").trim();
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
 
   const photo = await prisma.tripPhoto.findUnique({
     where: { id: photoId },
@@ -837,7 +855,280 @@ export async function deleteTripPhotoAction(formData: FormData) {
 
   await deleteUploadedPhoto(photo.filePath);
   await revalidateTrip(slug);
-  redirect(buildTripRedirect(slug, { day: selectedDayNumber }));
+  if (returnTo === "tracker") {
+    redirect(buildTrackerRedirect(slug));
+  }
+  redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
+}
+
+export async function updateTripPhotoAction(formData: FormData) {
+  await requireAdmin();
+
+  const slug = toRequiredString(formData.get("slug"), "Trip slug");
+  const photoId = toRequiredString(formData.get("photoId"), "Photo ID");
+  const field = toRequiredString(formData.get("field"), "Field");
+  const value = toOptionalString(formData.get("value"));
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
+  const selectedDayNumber = String(formData.get("selectedDayNumber") ?? "").trim();
+
+  if (!["title", "caption"].includes(field)) {
+    throw new Error("Unsupported photo field.");
+  }
+
+  await prisma.tripPhoto.update({
+    where: { id: photoId },
+    data: {
+      [field]: value
+    }
+  });
+
+  await revalidateTrip(slug);
+  if (returnTo === "tracker") {
+    redirect(buildTrackerRedirect(slug));
+  }
+  redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
+}
+
+export async function updateTrackerPointAction(formData: FormData) {
+  await requireAdmin();
+
+  const slug = toRequiredString(formData.get("slug"), "Trip slug");
+  const pointId = toRequiredString(formData.get("pointId"), "Tracker point ID");
+  const field = toRequiredString(formData.get("field"), "Field");
+  const value = toOptionalString(formData.get("value"));
+
+  if (field !== "note") {
+    throw new Error("Unsupported tracker point field.");
+  }
+
+  await prisma.tripTrackPoint.update({
+    where: { id: pointId },
+    data: {
+      note: value
+    }
+  });
+
+  await revalidateTrip(slug);
+  redirect(buildTrackerRedirect(slug));
+}
+
+export async function deleteTrackerPointAction(formData: FormData) {
+  await requireAdmin();
+
+  const slug = toRequiredString(formData.get("slug"), "Trip slug");
+  const pointId = toRequiredString(formData.get("pointId"), "Tracker point ID");
+
+  await prisma.tripTrackPoint.delete({
+    where: { id: pointId }
+  });
+
+  await revalidateTrip(slug);
+  redirect(buildTrackerRedirect(slug));
+}
+
+export async function createTripPostAction(formData: FormData) {
+  await requireAdmin();
+
+  const slug = toRequiredString(formData.get("slug"), "Trip slug");
+  const dayId = toRequiredString(formData.get("dayId"), "Day ID");
+  const selectedDayNumber = String(formData.get("selectedDayNumber") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
+
+  if (!title || !body) {
+    redirect(buildTripRedirect(slug, { error: "Posts need a title and body.", day: selectedDayNumber }));
+  }
+
+  await prisma.tripPost.create({
+    data: {
+      tripDayId: dayId,
+      title,
+      body
+    }
+  });
+
+  await revalidateTrip(slug);
+  if (returnTo === "tracker") {
+    redirect(buildTrackerRedirect(slug));
+  }
+  redirect(buildTripRedirect(slug, { day: selectedDayNumber, added: title, mode: "post" }));
+}
+
+export async function updateTripPostAction(formData: FormData) {
+  await requireAdmin();
+
+  const slug = toRequiredString(formData.get("slug"), "Trip slug");
+  const postId = toRequiredString(formData.get("postId"), "Post ID");
+  const field = toRequiredString(formData.get("field"), "Field");
+  const value = String(formData.get("value") ?? "").trim();
+  const selectedDayNumber = String(formData.get("selectedDayNumber") ?? "").trim();
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
+
+  if (!["title", "body"].includes(field)) {
+    throw new Error("Unsupported post field.");
+  }
+
+  await prisma.tripPost.update({
+    where: { id: postId },
+    data: {
+      [field]: value
+    }
+  });
+
+  await revalidateTrip(slug);
+  if (returnTo === "tracker") {
+    redirect(buildTrackerRedirect(slug));
+  }
+  redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
+}
+
+export async function deleteTripPostAction(formData: FormData) {
+  await requireAdmin();
+
+  const slug = toRequiredString(formData.get("slug"), "Trip slug");
+  const postId = toRequiredString(formData.get("postId"), "Post ID");
+  const selectedDayNumber = String(formData.get("selectedDayNumber") ?? "").trim();
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
+
+  const post = await prisma.tripPost.findUnique({
+    where: { id: postId },
+    include: {
+      media: {
+        select: {
+          filePath: true
+        }
+      }
+    }
+  });
+
+  if (!post) {
+    redirect(buildTripRedirect(slug, { error: "That post could not be found.", day: selectedDayNumber }));
+  }
+
+  await prisma.tripPost.delete({
+    where: { id: postId }
+  });
+
+  await Promise.all(post.media.map((media) => deleteUploadedPhoto(media.filePath)));
+  await revalidateTrip(slug);
+  if (returnTo === "tracker") {
+    redirect(buildTrackerRedirect(slug));
+  }
+  redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
+}
+
+export async function uploadTripPostMediaAction(formData: FormData) {
+  await requireAdmin();
+
+  const slug = toRequiredString(formData.get("slug"), "Trip slug");
+  const postId = toRequiredString(formData.get("postId"), "Post ID");
+  const selectedDayNumber = String(formData.get("selectedDayNumber") ?? "").trim();
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
+  const files = formData.getAll("media").filter((entry): entry is File => entry instanceof File && entry.size > 0);
+
+  if (!files.length) {
+    redirect(buildTripRedirect(slug, { error: "Select media to upload.", day: selectedDayNumber }));
+  }
+
+  const post = await prisma.tripPost.findUnique({
+    where: { id: postId },
+    include: {
+      tripDay: {
+        include: {
+          endPlace: true
+        }
+      }
+    }
+  });
+
+  if (!post) {
+    redirect(buildTripRedirect(slug, { error: "That post could not be found.", day: selectedDayNumber }));
+  }
+
+  for (const file of files) {
+    const { buffer, relativePath } = await saveUploadedMedia(file, "trip-post-media");
+    const metadata = await extractPhotoMetadata(buffer);
+
+    await prisma.tripPostMedia.create({
+      data: {
+        tripPostId: post.id,
+        filePath: relativePath,
+        originalFilename: file.name,
+        title: buildDayMediaTitle(post.tripDay.dayNumber, post.tripDay.endPlace.name),
+        caption: null,
+        mimeType: file.type || null,
+        capturedAt: metadata.capturedAt,
+        latitude: metadata.latitude,
+        longitude: metadata.longitude
+      }
+    });
+  }
+
+  await revalidateTrip(slug);
+  if (returnTo === "tracker") {
+    redirect(buildTrackerRedirect(slug));
+  }
+  redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
+}
+
+export async function updateTripPostMediaAction(formData: FormData) {
+  await requireAdmin();
+
+  const slug = toRequiredString(formData.get("slug"), "Trip slug");
+  const mediaId = toRequiredString(formData.get("mediaId"), "Post media ID");
+  const field = toRequiredString(formData.get("field"), "Field");
+  const value = toOptionalString(formData.get("value"));
+  const selectedDayNumber = String(formData.get("selectedDayNumber") ?? "").trim();
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
+
+  if (!["title", "caption"].includes(field)) {
+    throw new Error("Unsupported post media field.");
+  }
+
+  await prisma.tripPostMedia.update({
+    where: { id: mediaId },
+    data: {
+      [field]: value
+    }
+  });
+
+  await revalidateTrip(slug);
+  if (returnTo === "tracker") {
+    redirect(buildTrackerRedirect(slug));
+  }
+  redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
+}
+
+export async function deleteTripPostMediaAction(formData: FormData) {
+  await requireAdmin();
+
+  const slug = toRequiredString(formData.get("slug"), "Trip slug");
+  const mediaId = toRequiredString(formData.get("mediaId"), "Post media ID");
+  const selectedDayNumber = String(formData.get("selectedDayNumber") ?? "").trim();
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
+
+  const media = await prisma.tripPostMedia.findUnique({
+    where: { id: mediaId },
+    select: {
+      filePath: true
+    }
+  });
+
+  if (!media) {
+    redirect(buildTripRedirect(slug, { error: "That media item could not be found.", day: selectedDayNumber }));
+  }
+
+  await prisma.tripPostMedia.delete({
+    where: { id: mediaId }
+  });
+
+  await deleteUploadedPhoto(media.filePath);
+  await revalidateTrip(slug);
+  if (returnTo === "tracker") {
+    redirect(buildTrackerRedirect(slug));
+  }
+  redirect(buildTripRedirect(slug, selectedDayNumber ? { day: selectedDayNumber } : {}));
 }
 
 export async function batchAddActivitiesAction(_: BatchActivitiesState, formData: FormData): Promise<BatchActivitiesState> {

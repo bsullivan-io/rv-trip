@@ -10,6 +10,8 @@
     "seed": "tsx prisma/seed.ts",
     "prefetch:hotdogs": "tsx scripts/prefetch-hotdogs.ts",
     "recompute:activity-distances": "tsx scripts/recompute-activity-distances.ts",
+    "dedupe:tracker-points": "tsx scripts/dedupe-tracker-points.ts",
+    "backfill:tracker-geocodes": "tsx scripts/backfill-tracker-geocodes.ts",
     "prisma:generate": "prisma generate"
   },
   "dependencies": {

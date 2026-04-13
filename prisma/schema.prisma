@@ -17,6 +17,11 @@ enum DayStopKind {
   activity
 }
 
+enum TripTrackSource {
+  auto
+  checkin
+}
+
 model Trip {
   id               String    @id @default(cuid())
   slug             String    @unique
@@ -34,6 +39,7 @@ model Trip {
   updatedAt        DateTime  @updatedAt
   days             TripDay[]
   hotDogPlaces     HotDogPlace[]
+  trackPoints      TripTrackPoint[]
 }
 
 model Place {
@@ -77,8 +83,10 @@ model TripDay {
   endPlace                 Place       @relation("TripDayEndPlace", fields: [endPlaceId], references: [id])
   locations                DayLocation[]
   photos                   TripPhoto[]
+  posts                    TripPost[]
   stops                    DayStop[]
   hotDogPlaces             HotDogPlace[]
+  trackPoints              TripTrackPoint[]
 
   @@unique([tripId, dayNumber])
   @@index([tripId, dayNumber])
@@ -107,6 +115,8 @@ model TripPhoto {
   tripDayId         String
   filePath          String
   originalFilename  String
+  title             String?
+  caption           String?   @db.Text
   mimeType          String?
   capturedAt        DateTime?
   latitude          Float?
@@ -116,6 +126,37 @@ model TripPhoto {
   tripDay           TripDay   @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
 
   @@index([tripDayId, createdAt])
+}
+
+model TripPost {
+  id        String          @id @default(cuid())
+  tripDayId String
+  title     String
+  body      String          @db.Text
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  tripDay   TripDay         @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
+  media     TripPostMedia[]
+
+  @@index([tripDayId, createdAt])
+}
+
+model TripPostMedia {
+  id               String    @id @default(cuid())
+  tripPostId       String
+  filePath         String
+  originalFilename String
+  title            String?
+  caption          String?   @db.Text
+  mimeType         String?
+  capturedAt       DateTime?
+  latitude         Float?
+  longitude        Float?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  tripPost         TripPost  @relation(fields: [tripPostId], references: [id], onDelete: Cascade)
+
+  @@index([tripPostId, createdAt])
 }
 
 model DayLocation {
@@ -160,4 +201,25 @@ model AdminUser {
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model TripTrackPoint {
+  id            String          @id @default(cuid())
+  tripId        String
+  tripDayId     String?
+  latitude      Float
+  longitude     Float
+  recordedAt    DateTime
+  source        TripTrackSource
+  note          String?
+  cityName      String?
+  stateCode     String?
+  stateName     String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  trip          Trip            @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripDay       TripDay?        @relation(fields: [tripDayId], references: [id], onDelete: SetNull)
+
+  @@index([tripId, recordedAt])
+  @@index([tripDayId, recordedAt])
 }
