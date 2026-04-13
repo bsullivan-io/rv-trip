@@ -11,7 +11,8 @@ import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: "Make a Mile",
-  description: "Interactive RV itinerary map and admin console"
+  description: "Interactive RV itinerary map and admin console",
+  icons: { icon: "/rv.png" }
 };
 
 export default async function RootLayout({

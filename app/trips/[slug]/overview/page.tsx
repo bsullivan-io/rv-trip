@@ -221,7 +221,6 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
           <div className="trip-calendar-header">
             <div>
               <p className="eyebrow">Trip Media</p>
-              <h2>Photos and videos from the full trip</h2>
             </div>
             <span className="chip">{media.length} items</span>
           </div>
@@ -309,7 +308,6 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
             <div className="trip-calendar-header">
               <div>
                 <p className="eyebrow">Feed</p>
-                <h2>Latest posts and check-ins</h2>
               </div>
               <span className="chip">{feed.length} entries</span>
             </div>
@@ -322,7 +320,9 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                   return (
                     <li key={`point-${point.id}`} className="day-stop-card tracker-point-item">
                       {point.source === "checkin" && (() => {
-                        const isHotDog = point.note ? point.note.toLowerCase().includes("hot dog") || point.note.toLowerCase().includes("hotdog") : false;
+                        const resolvedLabel = resolveTrackerPointLabel(point, trackerCandidates);
+                        const textToCheck = [point.note, resolvedLabel].filter(Boolean).join(" ").toLowerCase();
+                        const isHotDog = textToCheck.includes("hot dog") || textToCheck.includes("hotdog");
                         return <img src={isHotDog ? "/hot_dog.png" : "/rv.png"} alt="" aria-hidden className={isHotDog ? "tracker-checkin-hotdog-icon" : "tracker-checkin-rv-icon"} />;
                       })()}
                       <div className="tracker-point-header">

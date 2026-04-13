@@ -1621,21 +1621,8 @@ export function TripViewer({
             ) : null}
           </article>
 
-          <article className="section-card stack">
-            <div>
-              <h3>Locations</h3>
-              <LocationList
-                locations={selectedDay.locations}
-                tripId={trip.id}
-                slug={trip.slug}
-                editable={editable}
-                selectedDayNumber={selectedDay.dayNumber}
-                updateLocationAction={updateLocationAction}
-                deleteLocationAction={deleteLocationAction}
-              />
-            </div>
-
-            <div>
+          {selectedDay.photos.length || canEdit ? (
+            <article className="section-card">
               <h3>Photos</h3>
               {canEdit ? (
                 <form action={uploadTripPhotoAction} className="photo-upload-form">
@@ -1699,7 +1686,20 @@ export function TripViewer({
               ) : (
                 <p className="muted">No photos uploaded for this day yet.</p>
               )}
-            </div>
+            </article>
+          ) : null}
+
+          <article className="section-card">
+            <h3>Locations</h3>
+            <LocationList
+              locations={selectedDay.locations}
+              tripId={trip.id}
+              slug={trip.slug}
+              editable={editable}
+              selectedDayNumber={selectedDay.dayNumber}
+              updateLocationAction={updateLocationAction}
+              deleteLocationAction={deleteLocationAction}
+            />
           </article>
         </div>
       </section>
