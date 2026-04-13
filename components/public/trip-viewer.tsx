@@ -855,10 +855,11 @@ export function TripViewer({
   }));
   const totalActivities = normalizedDays.reduce((count, day) => count + day.stops.filter((stop) => stop.kind === "activity").length, 0);
   const selectedDayCheckIns = (() => {
-    const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
     const candidates = trackerPoints
       .filter((point) => point.tripDayId === selectedDay.id && (point.source === "checkin" || Boolean(point.note)))
       .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
+    if (canEdit) return [...candidates].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
+    const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
     let lastAutoTime = -Infinity;
     return candidates
       .filter((point) => {

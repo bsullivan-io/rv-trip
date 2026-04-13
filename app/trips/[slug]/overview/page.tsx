@@ -146,7 +146,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
   }
 
   const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
-  const feedPoints = (() => {
+  const feedPoints = adminSession ? trip.trackPoints : (() => {
     const sorted = [...trip.trackPoints].sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime());
     let lastAutoTime = -Infinity;
     return sorted.filter((point) => {
