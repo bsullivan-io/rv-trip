@@ -322,11 +322,12 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
 
                 return (
                   <li key={`post-${post.id}`} className="day-stop-card tracker-point-item tracker-post-item">
-                    <div className="tracker-point-header">
-                      <div className="tracker-point-header-main">
-                        <strong>{post.title}</strong>
+                    <div className="day-post-primary-card">
+                    <div className="inline-item-header">
+                      <p className="day-post-primary-title">{post.title}</p>
+                      <p className="tracker-checkin-meta">
                         <span>{formatPointTimestamp(post.createdAt)}</span>
-                      </div>
+                      </p>
                       <EditModeGate enabled={Boolean(adminSession)} fallback={null}>
                         <form action={deleteTripPostAction}>
                           <input type="hidden" name="slug" value={trip.slug} />
@@ -343,7 +344,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                     </p>
                     <EditModeGate
                       enabled={Boolean(adminSession)}
-                      fallback={<p className="tracker-point-note">{post.body}</p>}
+                      fallback={<p className="day-post-primary-body">{post.body}</p>}
                     >
                         <form action={updateTripPostAction} className="tracker-inline-form">
                           <input type="hidden" name="slug" value={trip.slug} />
@@ -432,6 +433,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                         })}
                       </div>
                     ) : null}
+                    </div>
                   </li>
                 );
               })}

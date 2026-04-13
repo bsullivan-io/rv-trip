@@ -2403,12 +2403,31 @@ textarea {
     line-height: 1.35;
   }
 
+  .tracker-page-header h1 {
+    font-size: clamp(1.5rem, 8vw, 2rem);
+  }
+
+  .tracker-page-range {
+    font-size: 1rem;
+  }
+
+  .tracker-map,
+  .tracker-map-empty {
+    min-height: 240px;
+  }
+
   .tracker-dashboard-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
   }
 
   .tracker-stat-card {
-    min-height: 112px;
+    min-height: 90px;
+    padding: 12px;
+  }
+
+  .tracker-stat-card strong {
+    font-size: clamp(1.5rem, 8vw, 2.2rem);
   }
 
   .tracker-media-grid {
