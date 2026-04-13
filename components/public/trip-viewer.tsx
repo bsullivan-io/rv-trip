@@ -1628,18 +1628,6 @@ export function TripViewer({
                           {item.note ? <p className="day-stop-note">{item.note}</p> : null}
                           <div className="day-stop-distance-row">
                             {item.stateName ? <span className="chip">{item.stateName}</span> : null}
-                            <a
-                              className="chip chip-link"
-                              href={buildPlaceLookupUrl({
-                                name: item.note || "Check-in",
-                                latitude: item.latitude,
-                                longitude: item.longitude
-                              })}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Open check-in
-                            </a>
                           </div>
                         </li>
                       ))}

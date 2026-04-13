@@ -321,12 +321,12 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
 
                   return (
                     <li key={`point-${point.id}`} className="day-stop-card tracker-point-item">
+                      {point.source === "checkin" && (() => {
+                        const isHotDog = point.note ? point.note.toLowerCase().includes("hot dog") || point.note.toLowerCase().includes("hotdog") : false;
+                        return <img src={isHotDog ? "/hot_dog.png" : "/rv.png"} alt="" aria-hidden className={isHotDog ? "tracker-checkin-hotdog-icon" : "tracker-checkin-rv-icon"} />;
+                      })()}
                       <div className="tracker-point-header">
                         <div className="tracker-point-header-main">
-                          {point.source === "checkin" && (() => {
-                            const isHotDog = point.note ? point.note.toLowerCase().includes("hot dog") || point.note.toLowerCase().includes("hotdog") : false;
-                            return <img src={isHotDog ? "/hot_dog.png" : "/rv.png"} alt="" aria-hidden className={isHotDog ? "tracker-checkin-hotdog-icon" : "tracker-checkin-rv-icon"} />;
-                          })()}
                           <strong>{resolveTrackerPointLabel(point, trackerCandidates)}</strong>
                           <span>{formatPointTimestamp(point.recordedAt, entry.timezone)}</span>
                         </div>
