@@ -27,13 +27,24 @@ type TrackerPageProps = {
   }>;
 };
 
-function formatPointTimestamp(value: Date) {
-  return new Intl.DateTimeFormat("en-US", {
+function formatPointTimestamp(value: Date, timezone?: string | null) {
+  const tz = timezone ?? undefined;
+  const formatted = new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     hour: "numeric",
-    minute: "2-digit"
+    minute: "2-digit",
+    timeZone: tz
   }).format(value);
+
+  if (!tz) return formatted;
+
+  const tzLabel = new Intl.DateTimeFormat("en-US", {
+    timeZoneName: "short",
+    timeZone: tz
+  }).formatToParts(value).find((p) => p.type === "timeZoneName")?.value ?? "";
+
+  return tzLabel ? `${formatted} ${tzLabel}` : formatted;
 }
 
 function isVideoMedia(mimeType: string | null | undefined) {
@@ -103,11 +114,25 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
       dayNumber: day.dayNumber
     }))
   );
+  const sortedPoints = [...trip.trackPoints].sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime());
+
+  function inferTimezone(near: Date): string | null {
+    if (!sortedPoints.length) return null;
+    let closest = sortedPoints[0]!;
+    let minDiff = Math.abs(closest.recordedAt.getTime() - near.getTime());
+    for (const p of sortedPoints) {
+      const diff = Math.abs(p.recordedAt.getTime() - near.getTime());
+      if (diff < minDiff) { minDiff = diff; closest = p; }
+    }
+    return closest.timezone ?? null;
+  }
+
   const feed = [
     ...trip.trackPoints.map((point) => ({
       id: point.id,
       type: "point" as const,
       timestamp: point.recordedAt,
+      timezone: point.timezone ?? null,
       day: point.tripDay
         ? trip.days.find((day) => day.id === point.tripDay?.id) ?? null
         : null,
@@ -118,6 +143,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
         id: post.id,
         type: "post" as const,
         timestamp: post.createdAt,
+        timezone: inferTimezone(post.createdAt),
         day,
         post
       }))
@@ -278,7 +304,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                       <div className="tracker-point-header">
                         <div className="tracker-point-header-main">
                           <strong>{resolveTrackerPointLabel(point, trackerCandidates)}</strong>
-                          <span>{formatPointTimestamp(point.recordedAt)}</span>
+                          <span>{formatPointTimestamp(point.recordedAt, entry.timezone)}</span>
                         </div>
                         <EditModeGate enabled={Boolean(adminSession)} fallback={null}>
                           <form action={deleteTrackerPointAction}>
@@ -326,7 +352,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                     <div className="inline-item-header">
                       <p className="day-post-primary-title">{post.title}</p>
                       <p className="tracker-checkin-meta">
-                        <span>{formatPointTimestamp(post.createdAt)}</span>
+                        <span>{formatPointTimestamp(post.createdAt, entry.timezone)}</span>
                       </p>
                       <EditModeGate enabled={Boolean(adminSession)} fallback={null}>
                         <form action={deleteTripPostAction}>

@@ -14,6 +14,7 @@ type ReverseGeocodeResult = {
   cityName: string | null;
   stateCode: string | null;
   stateName: string | null;
+  timezone: string | null;
 };
 
 export function distanceMiles(a: Coordinates, b: Coordinates) {
@@ -45,52 +46,63 @@ export async function requireTrackerAdmin() {
   return session;
 }
 
-export async function reverseGeocodeLocation(latitude: number, longitude: number): Promise<ReverseGeocodeResult> {
+export async function reverseGeocodeLocation(latitude: number, longitude: number, recordedAt?: Date): Promise<ReverseGeocodeResult> {
   const apiKey = getApiKey();
   if (!apiKey) {
-    return { cityName: null, stateCode: null, stateName: null };
+    return { cityName: null, stateCode: null, stateName: null, timezone: null };
   }
 
-  const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`);
+  const timestampSeconds = Math.floor((recordedAt ?? new Date()).getTime() / 1000);
 
-  if (!response.ok) {
-    return { cityName: null, stateCode: null, stateName: null };
-  }
-
-  const payload = (await response.json()) as {
-    results?: Array<{
-      address_components?: Array<{
-        long_name?: string;
-        short_name?: string;
-        types?: string[];
-      }>;
-    }>;
-  };
+  const [geocodeResponse, timezoneResponse] = await Promise.all([
+    fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`),
+    fetch(`https://maps.googleapis.com/maps/api/timezone/json?location=${latitude},${longitude}&timestamp=${timestampSeconds}&key=${apiKey}`)
+  ]);
 
   let cityName: string | null = null;
   let stateCode: string | null = null;
   let stateName: string | null = null;
+  let timezone: string | null = null;
 
-  for (const result of payload.results ?? []) {
-    for (const component of result.address_components ?? []) {
-      if (
-        !cityName &&
-        (component.types?.includes("locality") ||
-          component.types?.includes("postal_town") ||
-          component.types?.includes("administrative_area_level_3") ||
-          component.types?.includes("sublocality"))
-      ) {
-        cityName = component.long_name ?? null;
-      }
+  if (geocodeResponse.ok) {
+    const payload = (await geocodeResponse.json()) as {
+      results?: Array<{
+        address_components?: Array<{
+          long_name?: string;
+          short_name?: string;
+          types?: string[];
+        }>;
+      }>;
+    };
 
-      if (component.types?.includes("administrative_area_level_1")) {
-        stateCode = component.short_name ?? null;
-        stateName = component.long_name ?? null;
+    for (const result of payload.results ?? []) {
+      for (const component of result.address_components ?? []) {
+        if (
+          !cityName &&
+          (component.types?.includes("locality") ||
+            component.types?.includes("postal_town") ||
+            component.types?.includes("administrative_area_level_3") ||
+            component.types?.includes("sublocality"))
+        ) {
+          cityName = component.long_name ?? null;
+        }
+
+        if (component.types?.includes("administrative_area_level_1")) {
+          stateCode = component.short_name ?? null;
+          stateName = component.long_name ?? null;
+        }
       }
     }
   }
 
-  return { cityName, stateCode, stateName };
+  if (timezoneResponse.ok) {
+    const tzPayload = (await timezoneResponse.json()) as { timeZoneId?: string; status?: string };
+    if (tzPayload.status === "OK" && tzPayload.timeZoneId) {
+      timezone = tzPayload.timeZoneId;
+    }
+  }
+
+  return { cityName, stateCode, stateName, timezone };
 }
 
 export async function resolveTrackerDayId(tripId: string, recordedAt: Date) {
@@ -197,7 +209,7 @@ export async function persistTrackerPoint(input: {
 
   const [tripDayId, location] = await Promise.all([
     resolveTrackerDayId(trip.id, recordedAt),
-    reverseGeocodeLocation(input.latitude, input.longitude)
+    reverseGeocodeLocation(input.latitude, input.longitude, recordedAt)
   ]);
 
   const point = await prisma.tripTrackPoint.create({
@@ -211,7 +223,8 @@ export async function persistTrackerPoint(input: {
       note: input.note?.trim() || null,
       cityName: location.cityName,
       stateCode: location.stateCode,
-      stateName: location.stateName
+      stateName: location.stateName,
+      timezone: location.timezone
     }
   });
 

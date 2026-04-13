@@ -12,6 +12,7 @@
     "recompute:activity-distances": "tsx scripts/recompute-activity-distances.ts",
     "dedupe:tracker-points": "tsx scripts/dedupe-tracker-points.ts",
     "backfill:tracker-geocodes": "tsx scripts/backfill-tracker-geocodes.ts",
+    "backfill:tracker-timezones": "tsx scripts/backfill-tracker-timezones.ts",
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
