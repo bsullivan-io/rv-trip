@@ -1746,7 +1746,7 @@ export function TripViewer({
             </div>
             <div className="photo-lightbox-image-wrap">
               {isVideoMedia(selectedMedia) ? (
-                <video className="photo-lightbox-image" src={selectedMedia.filePath} controls playsInline preload="metadata" />
+                <video key={selectedMedia.id} className="photo-lightbox-image" src={selectedMedia.filePath} controls playsInline preload="metadata" />
               ) : (
                 <img className="photo-lightbox-image" src={selectedMedia.filePath} alt={selectedMedia.originalFilename} />
               )}

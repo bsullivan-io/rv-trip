@@ -111,7 +111,7 @@ export function OverviewMediaLightbox({ allMedia }: { allMedia: OverviewMediaIte
         </div>
         <div className="photo-lightbox-image-wrap">
           {isVideo ? (
-            <video className="photo-lightbox-image" src={selectedMedia.filePath} controls playsInline preload="metadata" />
+            <video key={selectedMedia.id} className="photo-lightbox-image" src={selectedMedia.filePath} controls playsInline preload="metadata" />
           ) : (
             <img className="photo-lightbox-image" src={selectedMedia.filePath} alt={selectedMedia.originalFilename} />
           )}

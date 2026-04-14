@@ -297,7 +297,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                   <figure key={item.id} className="tracker-media-card">
                   <button type="button" data-lightbox-id={item.id} className="tracker-media-button">
                     {item.mimeType?.startsWith("video/") ? (
-                      <video className="tracker-media" src={item.filePath} playsInline preload="metadata" />
+                      <video className="tracker-media" src={item.filePath} muted playsInline preload="metadata" />
                     ) : (
                       <img className="tracker-media" src={item.filePath} alt={item.originalFilename} />
                     )}
@@ -524,7 +524,7 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                             <figure key={item.id} className="tracker-media-card tracker-post-media-card">
                               <button type="button" data-lightbox-id={item.id} className="tracker-media-button">
                                 {isVideoMedia(item.mimeType) ? (
-                                  <video className="tracker-media" src={item.filePath} playsInline preload="metadata" />
+                                  <video className="tracker-media" src={item.filePath} muted playsInline preload="metadata" />
                                 ) : (
                                   <img className="tracker-media" src={item.filePath} alt={item.originalFilename} />
                                 )}
