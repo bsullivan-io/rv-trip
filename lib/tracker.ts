@@ -103,8 +103,12 @@ export async function reverseGeocodeLocation(latitude: number, longitude: number
   return { cityName, stateCode, stateName, timezone };
 }
 
-export async function resolveTrackerDayId(tripId: string, recordedAt: Date) {
-  const recordedDay = new Date(Date.UTC(recordedAt.getUTCFullYear(), recordedAt.getUTCMonth(), recordedAt.getUTCDate(), 12, 0, 0));
+export async function resolveTrackerDayId(tripId: string, recordedAt: Date, timezone?: string | null) {
+  const localDateStr = timezone
+    ? new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(recordedAt)
+    : recordedAt.toISOString().slice(0, 10);
+  const [year, month, day] = localDateStr.split("-").map(Number);
+  const recordedDay = new Date(Date.UTC(year!, month! - 1, day!, 12, 0, 0));
   const day = await prisma.tripDay.findFirst({
     where: {
       tripId,
@@ -195,10 +199,8 @@ export async function persistTrackerPoint(input: {
     }
   }
 
-  const [tripDayId, location] = await Promise.all([
-    resolveTrackerDayId(trip.id, recordedAt),
-    reverseGeocodeLocation(input.latitude, input.longitude, recordedAt)
-  ]);
+  const location = await reverseGeocodeLocation(input.latitude, input.longitude, recordedAt);
+  const tripDayId = await resolveTrackerDayId(trip.id, recordedAt, location.timezone);
 
   const point = await prisma.tripTrackPoint.create({
     data: {

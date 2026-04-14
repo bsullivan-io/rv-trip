@@ -858,7 +858,12 @@ export function TripViewer({
   const totalActivities = normalizedDays.reduce((count, day) => count + day.stops.filter((stop) => stop.kind === "activity").length, 0);
   const selectedDayCheckIns = (() => {
     const candidates = trackerPoints
-      .filter((point) => point.tripDayId === selectedDay.id && (point.source === "checkin" || Boolean(point.note)))
+      .filter((point) => {
+        const belongsToDay = point.timezone && selectedDay.date
+          ? new Intl.DateTimeFormat("en-CA", { timeZone: point.timezone }).format(new Date(point.recordedAt)) === selectedDay.date.slice(0, 10)
+          : point.tripDayId === selectedDay.id;
+        return belongsToDay && (point.source === "checkin" || Boolean(point.note));
+      })
       .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
     if (canEdit) return [...candidates].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
     const ONE_HOUR_MS = 60 * 60 * 1000;
