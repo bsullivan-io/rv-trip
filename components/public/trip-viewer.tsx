@@ -63,6 +63,7 @@ type TripTrackerPoint = {
   cityName: string | null;
   stateCode: string | null;
   stateName: string | null;
+  timezone: string | null;
 };
 
 type TripDay = {
@@ -214,14 +215,15 @@ function formatDistanceLabel(miles: number | null | undefined) {
   return `${miles} mi`;
 }
 
-function formatTrackerTime(date: string | null) {
+function formatTrackerTime(date: string | null, timezone?: string | null) {
   if (!date) {
     return "Time unavailable";
   }
 
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
-    minute: "2-digit"
+    minute: "2-digit",
+    timeZone: timezone ?? undefined
   }).format(new Date(date));
 }
 
@@ -1625,7 +1627,7 @@ export function TripViewer({
                             : <img src="/rv.png" alt="" aria-hidden className="tracker-checkin-rv-icon" />}
                           <div className="tracker-checkin-meta">
                             <strong>{resolveTrackerPointLabel(item, trackerCandidates)}</strong>
-                            <span>{formatTrackerTime(item.recordedAt)}</span>
+                            <span>{formatTrackerTime(item.recordedAt, item.timezone)}</span>
                           </div>
                           {item.author ? <p className="day-post-author">by {item.author}</p> : null}
                           {item.note ? <p className="day-stop-note">{item.note}</p> : null}

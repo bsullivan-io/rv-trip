@@ -106,7 +106,8 @@ export default async function TripPage({ params, searchParams }: TripPageProps) 
           author: point.author ?? null,
           cityName: point.cityName,
           stateCode: point.stateCode,
-          stateName: point.stateName
+          stateName: point.stateName,
+          timezone: point.timezone ?? null
         })),
         hotDogPlaces: trip.hotDogPlaces.map((place) => ({
           id: place.id,
