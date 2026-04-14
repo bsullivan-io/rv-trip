@@ -186,14 +186,14 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
     return closest.timezone ?? null;
   }
 
-  const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+  const ONE_HOUR_MS = 60 * 60 * 1000;
   const feedPoints = adminSession ? trip.trackPoints : (() => {
     const sorted = [...trip.trackPoints].sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime());
     let lastAutoTime = -Infinity;
     return sorted.filter((point) => {
       if (point.source === "checkin") return true;
       const t = point.recordedAt.getTime();
-      if (t - lastAutoTime >= FIFTEEN_MINUTES_MS) {
+      if (t - lastAutoTime >= ONE_HOUR_MS) {
         lastAutoTime = t;
         return true;
       }

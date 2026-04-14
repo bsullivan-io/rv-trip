@@ -859,13 +859,13 @@ export function TripViewer({
       .filter((point) => point.tripDayId === selectedDay.id && (point.source === "checkin" || Boolean(point.note)))
       .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
     if (canEdit) return [...candidates].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
-    const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+    const ONE_HOUR_MS = 60 * 60 * 1000;
     let lastAutoTime = -Infinity;
     return candidates
       .filter((point) => {
         if (point.source === "checkin") return true;
         const t = new Date(point.recordedAt).getTime();
-        if (t - lastAutoTime >= FIFTEEN_MINUTES_MS) {
+        if (t - lastAutoTime >= ONE_HOUR_MS) {
           lastAutoTime = t;
           return true;
         }
