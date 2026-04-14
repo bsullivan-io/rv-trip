@@ -1981,7 +1981,7 @@ li.tracker-post-item.day-stop-card {
 
 .trip-detail {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+  grid-template-columns: 1fr;
   gap: 18px;
   padding: 26px;
 }
