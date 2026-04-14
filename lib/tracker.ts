@@ -107,8 +107,8 @@ export async function resolveTrackerDayId(tripId: string, recordedAt: Date, time
   const localDateStr = timezone
     ? new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(recordedAt)
     : recordedAt.toISOString().slice(0, 10);
-  const [year, month, day] = localDateStr.split("-").map(Number);
-  const recordedDay = new Date(Date.UTC(year!, month! - 1, day!, 12, 0, 0));
+  const [year, month, dayOfMonth] = localDateStr.split("-").map(Number);
+  const recordedDay = new Date(Date.UTC(year!, month! - 1, dayOfMonth!, 12, 0, 0));
   const day = await prisma.tripDay.findFirst({
     where: {
       tripId,
