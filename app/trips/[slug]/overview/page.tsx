@@ -135,10 +135,17 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
   const statesVisited = new Set(trip.trackPoints.map((point) => point.stateCode).filter(Boolean));
   const totalMiles = sumTrackedMiles(trip.trackPoints);
   const totalCheckIns = trip.trackPoints.filter((point) => point.source === "checkin").length;
-  const trackedDays = new Set(
-    trip.trackPoints.map((point) => point.tripDayId ?? point.recordedAt.toISOString().slice(0, 10))
-  );
-  const averageMilesPerDay = trackedDays.size ? Math.round(totalMiles / trackedDays.size) : 0;
+
+  // Only count days where the RV actually drove (> 1 mile) so rest/camping days
+  // don't inflate the denominator and pull the average down
+  const pointsByDay = new Map<string, Array<{ latitude: number; longitude: number }>>();
+  for (const point of trip.trackPoints) {
+    const key = point.tripDayId ?? point.recordedAt.toISOString().slice(0, 10);
+    if (!pointsByDay.has(key)) pointsByDay.set(key, []);
+    pointsByDay.get(key)!.push(point);
+  }
+  const drivingDays = [...pointsByDay.values()].filter((pts) => sumTrackedMiles(pts) > 1).length;
+  const averageMilesPerDay = drivingDays ? Math.round(totalMiles / drivingDays) : 0;
   const latestCheckIn = [...trip.trackPoints]
     .filter((point) => point.source === "checkin")
     .sort((left, right) => right.recordedAt.getTime() - left.recordedAt.getTime())[0] ?? null;
