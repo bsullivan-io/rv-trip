@@ -359,7 +359,7 @@ export function TripMap({ days, hotDogPlaces, trackPoints, centerOn, selectedDay
       });
 
       const trackerMarkers: google.maps.Marker[] = [];
-      (trackPoints ?? []).filter((p) => p.source === "checkin").forEach((p) => {
+      (trackPoints ?? []).filter((p) => p.source === "checkin" && p.note).forEach((p) => {
         const isHotDog = p.note ? p.note.toLowerCase().includes("hot dog") || p.note.toLowerCase().includes("hotdog") : false;
         const marker = new google.maps.Marker({
           map,

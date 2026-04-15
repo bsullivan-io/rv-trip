@@ -116,7 +116,7 @@ export function TrackerMap({ points }: TrackerMapProps) {
           map,
           position: { lat: point.latitude, lng: point.longitude },
           title: point.label,
-          icon: point.source === "checkin"
+          icon: point.source === "checkin" && point.note
             ? checkinIcon(point.note)
             : { path: google.maps.SymbolPath.CIRCLE, scale: 4, fillColor: "#3d679e", fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 }
         });
