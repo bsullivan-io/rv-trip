@@ -9,7 +9,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getPlaceDetails, searchTextPlaces } from "@/lib/google-places";
 import { recomputeTripActivityDistances, recomputeTripRoutes } from "@/lib/google-routes";
 import { distanceMiles, makeUniqueSlug, parseGoogleMapsLink } from "@/lib/google-maps";
-import { deleteUploadedPhoto, extractPhotoMetadata, saveUploadedMedia, saveUploadedPhoto } from "@/lib/photo-import";
+import { deleteUploadedPhoto, extractPhotoMetadata, matchPhotoToDay, saveUploadedMedia, saveUploadedPhoto } from "@/lib/photo-import";
 import { prisma } from "@/lib/prisma";
 import { slugify, toOptionalString, toRequiredString } from "@/lib/utils";
 
@@ -444,14 +444,29 @@ export async function uploadTripPhotoAction(formData: FormData) {
     const { buffer, relativePath } = await saveUploadedPhoto(file);
     const metadata = await extractPhotoMetadata(buffer);
 
-    const day = await prisma.tripDay.findFirst({
-      where: { tripId, dayNumber: selectedDayNumber },
-      include: { endPlace: true }
+    const allDays = await prisma.tripDay.findMany({
+      where: { tripId },
+      orderBy: { dayNumber: "asc" },
+      include: {
+        endPlace: true,
+        locations: { include: { place: true } }
+      }
     });
 
-    if (!day) {
-      redirect(buildTripRedirect(slug, { error: "Select a day before uploading a photo." }));
+    if (!allDays.length) {
+      redirect(buildTripRedirect(slug, { error: "No days found for this trip." }));
     }
+
+    const dayMatches = allDays.map((d) => ({
+      id: d.id,
+      dayNumber: d.dayNumber,
+      date: d.date ? d.date.toISOString().slice(0, 10) : null,
+      locations: d.locations.map((loc) => ({ place: { latitude: loc.place.latitude, longitude: loc.place.longitude } })),
+      endPlace: { name: d.endPlace.name, latitude: d.endPlace.latitude, longitude: d.endPlace.longitude }
+    }));
+
+    const matched = matchPhotoToDay(dayMatches, metadata, selectedDayNumber);
+    const day = allDays.find((d) => d.id === matched.id)!;
 
     await prisma.tripPhoto.create({
       data: {
@@ -461,7 +476,7 @@ export async function uploadTripPhotoAction(formData: FormData) {
         title: `Day ${day.dayNumber} - ${day.endPlace.name}`,
         caption: null,
         mimeType: file.type || null,
-        capturedAt: new Date(),
+        capturedAt: metadata.capturedAt ?? new Date(),
         latitude: metadata.latitude,
         longitude: metadata.longitude
       }
