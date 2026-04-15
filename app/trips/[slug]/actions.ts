@@ -864,15 +864,13 @@ export async function updateTripPhotoAction(formData: FormData) {
   const returnTo = String(formData.get("returnTo") ?? "").trim();
   const selectedDayNumber = String(formData.get("selectedDayNumber") ?? "").trim();
 
-  if (!["title", "caption"].includes(field)) {
+  if (!["title", "caption", "dayId"].includes(field)) {
     throw new Error("Unsupported photo field.");
   }
 
   await prisma.tripPhoto.update({
     where: { id: photoId },
-    data: {
-      [field]: value
-    }
+    data: field === "dayId" ? { tripDayId: toRequiredString(value, "Day") } : { [field]: value }
   });
 
   await revalidateTrip(slug);

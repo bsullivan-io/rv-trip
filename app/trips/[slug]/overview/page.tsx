@@ -163,7 +163,8 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
       caption: photo.caption,
       mimeType: photo.mimeType,
       capturedAt: photo.capturedAt?.toISOString() ?? null,
-      dayNumber: day.dayNumber
+      dayNumber: day.dayNumber,
+      tripDayId: day.id
     }))
   );
   const allMedia = [
@@ -344,6 +345,22 @@ export default async function TripTrackerPage({ params }: TrackerPageProps) {
                           />
                           <button className="button-secondary tracker-inline-save" type="submit">
                             Save
+                          </button>
+                        </form>
+                        <form action={updateTripPhotoAction} className="tracker-inline-form">
+                          <input type="hidden" name="slug" value={trip.slug} />
+                          <input type="hidden" name="photoId" value={item.id} />
+                          <input type="hidden" name="returnTo" value="overview" />
+                          <input type="hidden" name="field" value="dayId" />
+                          <select name="value" className="tracker-inline-input" defaultValue={item.tripDayId}>
+                            {trip.days.map((day) => (
+                              <option key={day.id} value={day.id}>
+                                Day {day.dayNumber}{day.title ? ` – ${day.title}` : day.endPlace ? ` – ${day.endPlace.name}` : ""}
+                              </option>
+                            ))}
+                          </select>
+                          <button className="button-secondary tracker-inline-save" type="submit">
+                            Move
                           </button>
                         </form>
                         <div className="tracker-media-meta-row">
