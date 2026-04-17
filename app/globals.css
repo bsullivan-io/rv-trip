@@ -154,6 +154,10 @@ textarea {
   margin-bottom: 4px;
 }
 
+.tracker-point-item .tracker-checkin-rv-icon {
+  height: 16px;
+}
+
 .tracker-checkin-hotdog-icon {
   height: 48px;
   width: auto;
