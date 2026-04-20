@@ -2212,18 +2212,18 @@ li.tracker-post-item.day-stop-card {
 
 .photo-lightbox-nav {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   min-height: 0;
 }
 
-.photo-lightbox-nav .photo-lightbox-image-wrap {
-  flex: 1;
-  min-width: 0;
+.photo-lightbox-nav-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
 }
 
 .photo-lightbox-nav-btn {
-  flex-shrink: 0;
   width: 36px;
   height: 36px;
   border: 1px solid var(--line);

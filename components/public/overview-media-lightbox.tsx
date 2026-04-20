@@ -125,7 +125,6 @@ export function OverviewMediaLightbox({ allMedia }: { allMedia: OverviewMediaIte
         </div>
         {allMedia.length > 1 ? (
           <div className="photo-lightbox-nav">
-            <button className="photo-lightbox-nav-btn" type="button" onClick={goPrev} aria-label="Previous photo">&#8249;</button>
             <div className="photo-lightbox-image-wrap">
               {isVideo ? (
                 <video key={selectedMedia.id} className="photo-lightbox-image" src={selectedMedia.filePath} controls playsInline preload="metadata" />
@@ -133,7 +132,10 @@ export function OverviewMediaLightbox({ allMedia }: { allMedia: OverviewMediaIte
                 <img className="photo-lightbox-image" src={selectedMedia.filePath} alt={selectedMedia.originalFilename} />
               )}
             </div>
-            <button className="photo-lightbox-nav-btn" type="button" onClick={goNext} aria-label="Next photo">&#8250;</button>
+            <div className="photo-lightbox-nav-buttons">
+              <button className="photo-lightbox-nav-btn" type="button" onClick={goPrev} aria-label="Previous photo">&#8249;</button>
+              <button className="photo-lightbox-nav-btn" type="button" onClick={goNext} aria-label="Next photo">&#8250;</button>
+            </div>
           </div>
         ) : (
           <div className="photo-lightbox-image-wrap">
