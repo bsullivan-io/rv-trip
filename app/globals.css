@@ -2210,6 +2210,38 @@ li.tracker-post-item.day-stop-card {
   overflow: auto;
 }
 
+.photo-lightbox-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+}
+
+.photo-lightbox-nav .photo-lightbox-image-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.photo-lightbox-nav-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: white;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+
+.photo-lightbox-nav-btn:hover {
+  background: var(--surface);
+}
+
 .photo-lightbox-image {
   display: block;
   width: 100%;

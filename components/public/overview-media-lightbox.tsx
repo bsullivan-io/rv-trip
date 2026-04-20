@@ -19,6 +19,18 @@ export function OverviewMediaLightbox({ allMedia }: { allMedia: OverviewMediaIte
   const [selectedMedia, setSelectedMedia] = useState<OverviewMediaItem | null>(null);
   const urlSyncReady = useRef(false);
 
+  const currentIndex = selectedMedia ? allMedia.findIndex((m) => m.id === selectedMedia.id) : -1;
+
+  function goPrev() {
+    if (currentIndex <= 0) setSelectedMedia(allMedia[allMedia.length - 1] ?? null);
+    else setSelectedMedia(allMedia[currentIndex - 1] ?? null);
+  }
+
+  function goNext() {
+    if (currentIndex >= allMedia.length - 1) setSelectedMedia(allMedia[0] ?? null);
+    else setSelectedMedia(allMedia[currentIndex + 1] ?? null);
+  }
+
   // Sync ?media= param with open/closed state (skip on initial render)
   useEffect(() => {
     if (!urlSyncReady.current) return;
@@ -57,15 +69,17 @@ export function OverviewMediaLightbox({ allMedia }: { allMedia: OverviewMediaIte
     return () => document.removeEventListener("click", handleClick);
   }, [allMedia]);
 
-  // Escape key to close
+  // Escape / arrow key navigation
   useEffect(() => {
     if (!selectedMedia) return;
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setSelectedMedia(null);
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedMedia]);
+  }, [selectedMedia, currentIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleShare() {
     if (!selectedMedia) return;
@@ -109,13 +123,27 @@ export function OverviewMediaLightbox({ allMedia }: { allMedia: OverviewMediaIte
             </button>
           </div>
         </div>
-        <div className="photo-lightbox-image-wrap">
-          {isVideo ? (
-            <video key={selectedMedia.id} className="photo-lightbox-image" src={selectedMedia.filePath} controls playsInline preload="metadata" />
-          ) : (
-            <img className="photo-lightbox-image" src={selectedMedia.filePath} alt={selectedMedia.originalFilename} />
-          )}
-        </div>
+        {allMedia.length > 1 ? (
+          <div className="photo-lightbox-nav">
+            <button className="photo-lightbox-nav-btn" type="button" onClick={goPrev} aria-label="Previous photo">&#8249;</button>
+            <div className="photo-lightbox-image-wrap">
+              {isVideo ? (
+                <video key={selectedMedia.id} className="photo-lightbox-image" src={selectedMedia.filePath} controls playsInline preload="metadata" />
+              ) : (
+                <img className="photo-lightbox-image" src={selectedMedia.filePath} alt={selectedMedia.originalFilename} />
+              )}
+            </div>
+            <button className="photo-lightbox-nav-btn" type="button" onClick={goNext} aria-label="Next photo">&#8250;</button>
+          </div>
+        ) : (
+          <div className="photo-lightbox-image-wrap">
+            {isVideo ? (
+              <video key={selectedMedia.id} className="photo-lightbox-image" src={selectedMedia.filePath} controls playsInline preload="metadata" />
+            ) : (
+              <img className="photo-lightbox-image" src={selectedMedia.filePath} alt={selectedMedia.originalFilename} />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
