@@ -28,7 +28,7 @@ function checkinIcon(note: string | null) {
   if (isHotDogCheckIn(note)) {
     return { url: "/hot_dog.png", scaledSize: new google.maps.Size(28, 28), anchor: new google.maps.Point(14, 14) };
   }
-  return { url: "/rv.png", scaledSize: new google.maps.Size(34, 18), anchor: new google.maps.Point(17, 18) };
+  return { url: "/rv.png", scaledSize: new google.maps.Size(22, 12), anchor: new google.maps.Point(11, 12) };
 }
 
 let googleMapsPromise: Promise<void> | null = null;
@@ -54,6 +54,30 @@ function loadGoogleMaps(): Promise<void> {
   });
 
   return googleMapsPromise;
+}
+
+async function snapToRoads(
+  points: TrackerPoint[]
+): Promise<Array<{ lat: number; lng: number }>> {
+  const rawPath = points.map((p) => ({ lat: p.latitude, lng: p.longitude }));
+  try {
+    const step = Math.max(1, Math.ceil(points.length / 100));
+    const sampled = points.filter((_, i) => i % step === 0);
+    const pathParam = sampled.map((p) => `${p.latitude},${p.longitude}`).join("|");
+    const res = await fetch(
+      `https://roads.googleapis.com/v1/snapToRoads?path=${pathParam}&interpolate=true&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+    );
+    const data = (await res.json()) as {
+      snappedPoints?: Array<{ location: { latitude: number; longitude: number } }>;
+    };
+    const snapped = data.snappedPoints ?? [];
+    if (snapped.length > 0) {
+      return snapped.map((sp) => ({ lat: sp.location.latitude, lng: sp.location.longitude }));
+    }
+  } catch {
+    // fall through to raw path
+  }
+  return rawPath;
 }
 
 function formatTrackerTimestamp(value: string) {
@@ -93,9 +117,10 @@ export function TrackerMap({ points }: TrackerMapProps) {
         fullscreenControl: false
       });
 
-      const path = points.map((point) => ({ lat: point.latitude, lng: point.longitude }));
+      // Draw initial raw path immediately, then replace with snapped path
+      const rawPath = points.map((p) => ({ lat: p.latitude, lng: p.longitude }));
       polyline = new google.maps.Polyline({
-        path,
+        path: rawPath,
         strokeColor: "#c62839",
         strokeWeight: 7,
         strokeOpacity: 0.95,
@@ -104,10 +129,17 @@ export function TrackerMap({ points }: TrackerMapProps) {
       });
 
       const bounds = new google.maps.LatLngBounds();
-      path.forEach((point) => bounds.extend(point));
+      rawPath.forEach((point) => bounds.extend(point));
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, 36);
       }
+
+      // Replace path with road-snapped version once available
+      snapToRoads(points).then((snappedPath) => {
+        if (!disposed && polyline) {
+          polyline.setPath(snappedPath);
+        }
+      });
 
       const infoWindow = new google.maps.InfoWindow();
 
