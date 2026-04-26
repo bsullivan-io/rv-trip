@@ -11,6 +11,7 @@ type RouteTripDay = {
   id: string;
   tripId: string;
   dayNumber: number;
+  title: string | null;
   miles: number;
   startPlace: RoutePlace;
   endPlace: RoutePlace;
@@ -454,7 +455,7 @@ export async function recomputeTripRoutes(tripId: string) {
       await prisma.tripDay.update({
         where: { id: day.id },
         data: {
-          title: buildDayTitle(day),
+          ...(day.title ? {} : { title: buildDayTitle(day) }),
           miles: computed.miles,
           distanceMeters: computed.distanceMeters,
           durationSeconds: computed.durationSeconds,
@@ -467,7 +468,7 @@ export async function recomputeTripRoutes(tripId: string) {
       await prisma.tripDay.update({
         where: { id: day.id },
         data: {
-          title: buildDayTitle(day)
+          ...(day.title ? {} : { title: buildDayTitle(day) })
         }
       });
       totalMiles += day.miles;
