@@ -15,6 +15,7 @@ import {
   uploadTripPhotoAction,
   uploadTripPostMediaAction,
   updateDayInlineAction,
+  updateDayPlaceInlineAction,
   updateLocationInlineAction,
   updateTripPhotoAction,
   updateStopInlineAction,
@@ -216,6 +217,7 @@ export default async function TripPage({ params, searchParams }: TripPageProps) 
       deletePostMediaAction={deleteTripPostMediaAction}
       updateTripAction={updateTripInlineAction}
       updateDayAction={updateDayInlineAction}
+      updateDayPlaceAction={updateDayPlaceInlineAction}
       updateLocationAction={updateLocationInlineAction}
       updateStopAction={updateStopInlineAction}
       updatePhotoAction={updateTripPhotoAction}

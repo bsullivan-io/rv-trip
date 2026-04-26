@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faAnglesLeft, faExpand, faShareNodes, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { InlinePlaceEditor } from "@/components/public/inline-place-editor";
 import { TripMap } from "@/components/public/trip-map";
 import { TripStageTabs } from "@/components/public/trip-stage-tabs";
 import { useEditMode } from "@/components/ui/edit-mode";
@@ -146,6 +147,7 @@ type TripViewerProps = {
   deletePostMediaAction: (formData: FormData) => Promise<void>;
   updateTripAction: (formData: FormData) => Promise<void>;
   updateDayAction: (formData: FormData) => Promise<void>;
+  updateDayPlaceAction: (formData: FormData) => Promise<void>;
   updateLocationAction: (formData: FormData) => Promise<void>;
   updateStopAction: (formData: FormData) => Promise<void>;
   updatePhotoAction: (formData: FormData) => Promise<void>;
@@ -632,6 +634,7 @@ export function TripViewer({
   deletePostMediaAction,
   updateTripAction,
   updateDayAction,
+  updateDayPlaceAction,
   updateLocationAction,
   updateStopAction,
   updatePhotoAction,
@@ -1328,6 +1331,29 @@ export function TripViewer({
           <article className="section-card">
             <p className="eyebrow">Day {selectedDay.dayNumber} · {formatDateLabel(selectedDay.date)}</p>
             <InlineEditableText canEdit={editable} label="day title" value={selectedDay.title} action={updateDayAction} hiddenFields={dayHidden} field="title" className="trip-heading-edit" />
+            {editable ? (
+              <div className="day-meta-edit-grid">
+                <div className="field">
+                  <label className="field-label">Date</label>
+                  <form action={updateDayAction} className="tracker-inline-form">
+                    <input type="hidden" name="dayId" value={selectedDay.id} />
+                    <input type="hidden" name="slug" value={trip.slug} />
+                    <input type="hidden" name="selectedDayNumber" value={selectedDay.dayNumber} />
+                    <input type="hidden" name="field" value="date" />
+                    <input type="date" name="value" defaultValue={selectedDay.date?.slice(0, 10) ?? ""} className="tracker-inline-input" />
+                    <button type="submit" className="button-secondary tracker-inline-save">Save</button>
+                  </form>
+                </div>
+                <div className="field">
+                  <label className="field-label">Start</label>
+                  <InlinePlaceEditor label="start place" currentName={selectedDay.startPlace.name} field="startPlaceId" action={updateDayPlaceAction} hiddenFields={dayHidden} />
+                </div>
+                <div className="field">
+                  <label className="field-label">End</label>
+                  <InlinePlaceEditor label="end place" currentName={selectedDay.endPlace.name} field="endPlaceId" action={updateDayPlaceAction} hiddenFields={dayHidden} />
+                </div>
+              </div>
+            ) : null}
             <div className="chip-row">
 {selectedDay.miles ? <span className="chip">{selectedDay.miles} miles</span> : null}
               {selectedDay.durationSeconds ? <span className="chip">{formatDriveTime(selectedDay.durationSeconds)}</span> : null}

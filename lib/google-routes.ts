@@ -268,6 +268,7 @@ function buildRoutePath(day: Pick<RouteTripDay, "startPlace" | "endPlace" | "loc
     id: "",
     tripId: "",
     dayNumber: 0,
+    title: null,
     miles: 0,
     stops: []
   });

@@ -11,6 +11,7 @@ import { recomputeTripActivityDistances, recomputeTripRoutes } from "@/lib/googl
 import { distanceMiles, makeUniqueSlug, parseGoogleMapsLink } from "@/lib/google-maps";
 import { deleteUploadedPhoto, extractPhotoMetadata, matchPhotoToDay, saveUploadedMedia, saveUploadedPhoto } from "@/lib/photo-import";
 import { prisma } from "@/lib/prisma";
+import { parseDateInput } from "@/lib/dates";
 import { slugify, toOptionalString, toRequiredString } from "@/lib/utils";
 
 function buildTripRedirect(slug: string, params: Record<string, string>) {
@@ -529,15 +530,42 @@ export async function updateDayInlineAction(formData: FormData) {
   const field = toRequiredString(formData.get("field"), "Field");
   const value = toOptionalString(formData.get("value"));
 
-  if (!["title", "summary", "callout", "accommodationName", "accommodationDescription"].includes(field)) {
+  if (!["title", "summary", "callout", "accommodationName", "accommodationDescription", "date"].includes(field)) {
     throw new Error("Unsupported day field.");
   }
 
+  const data = field === "date"
+    ? { date: value ? parseDateInput(value, "Date") : null }
+    : { [field]: value };
+
   await prisma.tripDay.update({
     where: { id: dayId },
-    data: { [field]: value }
+    data
   });
 
+  await revalidateTrip(slug);
+  redirect(buildTripRedirect(slug, { day: selectedDayNumber }));
+}
+
+export async function updateDayPlaceInlineAction(formData: FormData) {
+  await requireAdmin();
+
+  const slug = toRequiredString(formData.get("slug"), "Trip slug");
+  const dayId = toRequiredString(formData.get("dayId"), "Day ID");
+  const selectedDayNumber = toRequiredString(formData.get("selectedDayNumber"), "Selected day");
+  const field = toRequiredString(formData.get("field"), "Field");
+  const googlePlaceId = toRequiredString(formData.get("placeId"), "Place ID");
+
+  if (!["startPlaceId", "endPlaceId"].includes(field)) {
+    throw new Error("Unsupported place field.");
+  }
+
+  const details = await getPlaceDetails(googlePlaceId);
+  const place = await resolveOrCreatePlace(details.name, details.latitude, details.longitude, details.placeId);
+  const day = await prisma.tripDay.findUniqueOrThrow({ where: { id: dayId }, select: { tripId: true } });
+
+  await prisma.tripDay.update({ where: { id: dayId }, data: { [field]: place.id } });
+  await recomputeTripRoutes(day.tripId);
   await revalidateTrip(slug);
   redirect(buildTripRedirect(slug, { day: selectedDayNumber }));
 }
