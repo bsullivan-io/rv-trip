@@ -2235,6 +2235,30 @@ li.tracker-post-item.day-stop-card {
   font-size: 1rem;
 }
 
+.upload-progress {
+  display: grid;
+  gap: 8px;
+}
+
+.upload-progress-label {
+  font-size: 0.9rem;
+  color: var(--ink-muted, #888);
+}
+
+.upload-progress-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--ink);
+  transition: width 0.3s ease;
+}
+
 .upload-results {
   display: grid;
   gap: 10px;

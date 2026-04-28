@@ -1,21 +1,66 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
-import type { BatchUploadResult } from "@/app/trips/[slug]/actions";
+import { useRef, useState } from "react";
+
+type UploadResult = {
+  filename: string;
+  dayNumber: number | null;
+  error: string | null;
+};
 
 type Props = {
   tripId: string;
   slug: string;
   tripTitle: string;
-  uploadAction: (prevState: unknown, formData: FormData) => Promise<BatchUploadResult>;
 };
 
-export function PhotoUploadPageClient({ tripId, slug, tripTitle, uploadAction }: Props) {
-  const [state, dispatch, pending] = useActionState(uploadAction, null);
+export function PhotoUploadPageClient({ tripId, slug, tripTitle }: Props) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [completed, setCompleted] = useState(0);
+  const [results, setResults] = useState<UploadResult[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const hasResults = state?.results && state.results.length > 0;
+  const total = selectedFiles.length;
+  const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedFiles.length || uploading) return;
+
+    setUploading(true);
+    setCompleted(0);
+    setResults(null);
+
+    const uploadResults: UploadResult[] = [];
+
+    for (const file of selectedFiles) {
+      const fd = new FormData();
+      fd.append("tripId", tripId);
+      fd.append("slug", slug);
+      fd.append("photo", file);
+
+      try {
+        const res = await fetch("/api/upload-photo", { method: "POST", body: fd });
+        const data = (await res.json()) as { dayNumber?: number; error?: string };
+        uploadResults.push({
+          filename: file.name,
+          dayNumber: data.dayNumber ?? null,
+          error: data.error ?? null
+        });
+      } catch {
+        uploadResults.push({ filename: file.name, dayNumber: null, error: "Network error" });
+      }
+
+      setCompleted((c) => c + 1);
+    }
+
+    setResults(uploadResults);
+    setUploading(false);
+  }
+
+  const hasResults = results && results.length > 0;
+  const successCount = results?.filter((r) => !r.error).length ?? 0;
 
   return (
     <div className="photo-upload-page">
@@ -28,9 +73,7 @@ export function PhotoUploadPageClient({ tripId, slug, tripTitle, uploadAction }:
       </header>
 
       {!hasResults && (
-        <form action={dispatch} className="upload-form">
-          <input type="hidden" name="tripId" value={tripId} />
-          <input type="hidden" name="slug" value={slug} />
+        <form onSubmit={handleSubmit} className="upload-form">
           <input
             ref={inputRef}
             type="file"
@@ -38,27 +81,38 @@ export function PhotoUploadPageClient({ tripId, slug, tripTitle, uploadAction }:
             accept="image/*"
             multiple
             className="upload-file-input-hidden"
-            onChange={(e) => setSelectedFiles(Array.from(e.target.files ?? []))}
+            onChange={(e) => {
+              setSelectedFiles(Array.from(e.target.files ?? []));
+              setResults(null);
+              setCompleted(0);
+            }}
           />
 
           <button
             type="button"
             className="upload-browse-btn"
             onClick={() => inputRef.current?.click()}
-            disabled={pending}
+            disabled={uploading}
           >
-            {pending
-              ? "Uploading…"
-              : selectedFiles.length > 0
-                ? `${selectedFiles.length} photo${selectedFiles.length !== 1 ? "s" : ""} selected`
-                : "Browse Photos"}
+            {selectedFiles.length > 0
+              ? `${selectedFiles.length} photo${selectedFiles.length !== 1 ? "s" : ""} selected`
+              : "Browse Photos"}
           </button>
 
-          {selectedFiles.length > 0 && (
-            <button type="submit" className="button-primary upload-submit-btn" disabled={pending}>
-              {pending
-                ? `Uploading ${selectedFiles.length} photo${selectedFiles.length !== 1 ? "s" : ""}…`
-                : `Upload ${selectedFiles.length} photo${selectedFiles.length !== 1 ? "s" : ""}`}
+          {uploading && (
+            <div className="upload-progress">
+              <div className="upload-progress-label">
+                Uploading {completed} of {total}…
+              </div>
+              <div className="upload-progress-track">
+                <div className="upload-progress-fill" style={{ width: `${progressPct}%` }} />
+              </div>
+            </div>
+          )}
+
+          {selectedFiles.length > 0 && !uploading && (
+            <button type="submit" className="button-primary upload-submit-btn">
+              Upload {selectedFiles.length} photo{selectedFiles.length !== 1 ? "s" : ""}
             </button>
           )}
         </form>
@@ -67,9 +121,9 @@ export function PhotoUploadPageClient({ tripId, slug, tripTitle, uploadAction }:
       {hasResults && (
         <div className="upload-results">
           <div className="upload-results-summary">
-            {state.results.filter((r) => !r.error).length} of {state.results.length} photos uploaded successfully.
+            {successCount} of {results.length} photos uploaded successfully.
           </div>
-          {state.results.map((r, i) => (
+          {results.map((r, i) => (
             <div
               key={i}
               className={`upload-result-item ${r.error ? "upload-result-error" : "upload-result-ok"}`}

@@ -1,5 +1,4 @@
 import { notFound, redirect } from "next/navigation";
-import { uploadTripPhotosBatchAction } from "@/app/trips/[slug]/actions";
 import { getAdminSession } from "@/lib/auth";
 import { getTripBySlug } from "@/lib/data";
 import { PhotoUploadPageClient } from "@/components/public/photo-upload-page";
@@ -22,7 +21,6 @@ export default async function PhotoUploadPage({ params }: Props) {
       tripId={trip.id}
       slug={trip.slug}
       tripTitle={trip.title}
-      uploadAction={uploadTripPhotosBatchAction}
     />
   );
 }
