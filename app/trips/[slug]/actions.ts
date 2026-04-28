@@ -1279,3 +1279,75 @@ export async function batchAddActivitiesAction(_: BatchActivitiesState, formData
     results
   };
 }
+
+export type BatchUploadResult = {
+  results: Array<{
+    filename: string;
+    dayNumber: number | null;
+    error: string | null;
+  }>;
+};
+
+export async function uploadTripPhotosBatchAction(
+  _prevState: unknown,
+  formData: FormData
+): Promise<BatchUploadResult> {
+  await requireAdmin();
+
+  const tripId = toRequiredString(formData.get("tripId"), "Trip ID");
+  const slug = toRequiredString(formData.get("slug"), "Trip slug");
+  const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
+
+  const allDays = await prisma.tripDay.findMany({
+    where: { tripId },
+    orderBy: { dayNumber: "asc" },
+    include: {
+      endPlace: true,
+      locations: { include: { place: true } }
+    }
+  });
+
+  const dayMatches = allDays.map((d) => ({
+    id: d.id,
+    dayNumber: d.dayNumber,
+    date: d.date ? d.date.toISOString().slice(0, 10) : null,
+    locations: d.locations.map((loc) => ({ place: { latitude: loc.place.latitude, longitude: loc.place.longitude } })),
+    endPlace: { name: d.endPlace.name, latitude: d.endPlace.latitude, longitude: d.endPlace.longitude }
+  }));
+
+  const batchResults: BatchUploadResult["results"] = [];
+
+  for (const file of files) {
+    try {
+      const { buffer, relativePath } = await saveUploadedPhoto(file);
+      const metadata = await extractPhotoMetadata(buffer);
+      const matched = matchPhotoToDay(dayMatches, metadata, 0);
+      const day = allDays.find((d) => d.id === matched.id)!;
+
+      await prisma.tripPhoto.create({
+        data: {
+          tripDayId: day.id,
+          filePath: relativePath,
+          originalFilename: file.name,
+          title: `Day ${day.dayNumber} - ${day.endPlace.name}`,
+          caption: null,
+          mimeType: file.type || null,
+          capturedAt: metadata.capturedAt ?? new Date(),
+          latitude: metadata.latitude,
+          longitude: metadata.longitude
+        }
+      });
+
+      batchResults.push({ filename: file.name, dayNumber: day.dayNumber, error: null });
+    } catch (err) {
+      batchResults.push({
+        filename: file.name,
+        dayNumber: null,
+        error: err instanceof Error ? err.message : "Upload failed"
+      });
+    }
+  }
+
+  await revalidateTrip(slug);
+  return { results: batchResults };
+}

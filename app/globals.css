@@ -2170,6 +2170,121 @@ li.tracker-post-item.day-stop-card {
   font-size: 0.82rem;
 }
 
+/* ── Mobile photo upload page ───────────────────────────────── */
+
+.photo-upload-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: grid;
+  gap: 20px;
+}
+
+.upload-page-header {
+  display: grid;
+  gap: 8px;
+}
+
+.upload-page-hint {
+  font-size: 0.9rem;
+  color: var(--ink-muted, #888);
+  margin: 0;
+}
+
+.upload-form {
+  display: grid;
+  gap: 12px;
+}
+
+.upload-file-input-hidden {
+  display: none;
+}
+
+.upload-browse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 140px;
+  border: 2px dashed var(--line);
+  border-radius: 16px;
+  background: none;
+  font-size: 1.15rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--ink);
+  transition: border-color 0.15s, background 0.15s;
+  padding: 24px;
+}
+
+.upload-browse-btn:hover,
+.upload-browse-btn:focus-visible {
+  border-color: var(--ink-muted, #888);
+  background: rgba(0, 0, 0, 0.02);
+  outline: none;
+}
+
+.upload-browse-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.upload-submit-btn {
+  width: 100%;
+  min-height: 52px;
+  font-size: 1rem;
+}
+
+.upload-results {
+  display: grid;
+  gap: 10px;
+}
+
+.upload-results-summary {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0 2px;
+}
+
+.upload-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.upload-result-ok {
+  background: #f0faf0;
+}
+
+.upload-result-error {
+  background: #fff0f0;
+}
+
+.upload-result-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.upload-result-status {
+  white-space: nowrap;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.upload-done-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 4px;
+}
+
 .photo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
