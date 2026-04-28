@@ -1329,7 +1329,7 @@ export async function uploadTripPhotosBatchAction(
           tripDayId: day.id,
           filePath: relativePath,
           originalFilename: file.name,
-          title: `Day ${day.dayNumber} - ${day.endPlace.name}`,
+          title: `Day ${day.dayNumber}`,
           caption: null,
           mimeType: file.type || null,
           capturedAt: metadata.capturedAt ?? new Date(),
