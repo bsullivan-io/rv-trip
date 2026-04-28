@@ -169,6 +169,7 @@ export async function persistTrackerPoint(input: {
     select: {
       id: true,
       slug: true,
+      trackingEnabled: true,
       trackPoints: {
         orderBy: { recordedAt: "desc" },
         take: 1,
@@ -183,6 +184,10 @@ export async function persistTrackerPoint(input: {
 
   if (!trip) {
     throw new Error("Trip not found.");
+  }
+
+  if (!trip.trackingEnabled) {
+    return { stored: false as const, reason: "tracking_disabled" };
   }
 
   const recordedAt = input.recordedAt ?? new Date();
